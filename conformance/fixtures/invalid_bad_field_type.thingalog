@@ -1,0 +1,18 @@
+{
+  "catdef": "1.0",
+
+  "product": {
+    "name": "Bad field type",
+    "slug": "broken"
+  },
+
+  "templates": [
+    {
+      "name": "Item",
+      "field_defs": [
+        {"label": "Title", "type": "String", "sort_order": 10},
+        {"label": "Broken", "type": "SpreadsheetFormula", "sort_order": 20}
+      ]
+    }
+  ]
+}

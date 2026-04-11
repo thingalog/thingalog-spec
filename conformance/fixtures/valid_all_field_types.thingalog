@@ -1,0 +1,61 @@
+{
+  "catdef": "1.0",
+
+  "product": {
+    "name": "Field Type Gallery",
+    "slug": "field-types"
+  },
+
+  "requires": {
+    "renderer": ">=1.0",
+    "field_types": ["String", "Integer", "RichText", "Enumerated", "Photo", "Table", "CloudFile", "URL", "Date", "Money", "Boolean"]
+  },
+
+  "templates": [
+    {
+      "name": "Sample",
+      "field_defs": [
+        {"label": "Name",        "type": "String",     "sort_order": 10, "required": true},
+        {"label": "Count",       "type": "Integer",    "sort_order": 20},
+        {"label": "Description", "type": "RichText",   "sort_order": 30},
+        {"label": "Category",    "type": "Enumerated", "sort_order": 40, "target": "Category", "filterable": true},
+        {"label": "Photo",       "type": "Photo",      "sort_order": 50},
+        {"label": "Dimensions",  "type": "Table",      "sort_order": 60},
+        {"label": "Attachment",  "type": "CloudFile",   "sort_order": 70},
+        {"label": "Source",      "type": "URL",        "sort_order": 80},
+        {"label": "Acquired",    "type": "Date",       "sort_order": 90},
+        {"label": "Value",       "type": "Money",      "sort_order": 100},
+        {"label": "For Sale",    "type": "Boolean",    "sort_order": 110}
+      ]
+    }
+  ],
+
+  "data": {
+    "values": {
+      "Category": ["Alpha", "Beta", "Gamma"]
+    },
+    "items": [
+      {
+        "template": "Sample",
+        "fields": {
+          "Name": "Complete Item",
+          "Count": 42,
+          "Description": "A sample with every field type populated.",
+          "Category": "Alpha",
+          "Source": "https://example.com",
+          "Acquired": "2024-06-15",
+          "Value": {"amount": 199.99, "currency": "USD"},
+          "For Sale": true
+        }
+      },
+      {
+        "template": "Sample",
+        "fields": {
+          "Name": "Sparse Item",
+          "Count": 0,
+          "For Sale": false
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,241 @@
+{
+  "catdef": "1.0",
+
+  "product": {
+    "name": "Scott's Watch Collection",
+    "slug": "scottswatches",
+    "tagline": "Vintage timepieces, documented",
+    "contact_email": "scott@confusedgorilla.com",
+    "owner": "Scott Welch",
+    "theme": {
+      "accent": "#1a365d",
+      "accent_dim": "#4a7ab5",
+      "bg": "#0d1117",
+      "panel": "#161b22",
+      "ink": "#e6edf3",
+      "muted": "#8b949e",
+      "border": "#30363d",
+      "mode": "dark"
+    }
+  },
+
+  "requires": {
+    "renderer": ">=1.0",
+    "features": ["photos", "social"],
+    "field_types": ["String", "Integer", "Enumerated", "Photo", "RichText"]
+  },
+
+  "hints": {
+    "expected_items": 50,
+    "expected_photos": 150,
+    "primary_media": "photo",
+    "update_frequency": "weekly",
+    "audience": "public"
+  },
+
+  "templates": [
+    {
+      "name": "Watch",
+      "icon": "⌚",
+      "description": "A vintage or modern timepiece",
+      "field_defs": [
+        {"label": "Title",         "type": "String",     "sort_order": 10, "required": true, "importance": "required", "placeholder": "e.g. Omega Speedmaster Professional"},
+        {"label": "Brand",         "type": "Enumerated", "sort_order": 20, "target": "Brand", "filterable": true, "importance": "required", "widget": "autocomplete"},
+        {"label": "Reference",     "type": "String",     "sort_order": 30, "importance": "preferred", "placeholder": "e.g. 145.022-69"},
+        {"label": "Year",          "type": "Integer",    "sort_order": 40, "importance": "preferred", "filterable": true},
+        {"label": "Movement",      "type": "Enumerated", "sort_order": 50, "target": "Movement", "filterable": true, "widget": "dropdown"},
+        {"label": "Case Material", "type": "Enumerated", "sort_order": 60, "target": "Material", "filterable": true},
+        {"label": "Diameter",      "type": "String",     "sort_order": 70, "placeholder": "e.g. 42mm"},
+        {"label": "Condition",     "type": "Enumerated", "sort_order": 80, "target": "Condition", "widget": "dropdown"},
+        {"label": "Photo",         "type": "Photo",      "sort_order": 90, "importance": "required"},
+        {"label": "Notes",         "type": "RichText",   "sort_order": 100}
+      ]
+    }
+  ],
+
+  "settings": {
+    "public": true,
+    "embed": {"enabled": true, "powered_by": true},
+    "social": {"likes": true, "favourites": true},
+    "health_score": {"enabled": true}
+  },
+
+  "data": {
+    "values": {
+      "Brand": ["Omega", "Rolex", "Tudor", "Seiko", "Heuer", "Universal Genève", "Longines", "Zenith"],
+      "Movement": ["Manual", "Automatic", "Quartz"],
+      "Material": ["Stainless Steel", "Gold", "Two-Tone", "Titanium", "Platinum"],
+      "Condition": ["Mint", "Excellent", "Very Good", "Good", "Fair", "Poor"]
+    },
+    "items": [
+      {
+        "template": "Watch",
+        "fields": {
+          "Title": "Omega Speedmaster Professional 145.022",
+          "Brand": "Omega",
+          "Reference": "145.022-69 ST",
+          "Year": 1969,
+          "Movement": "Manual",
+          "Case Material": "Stainless Steel",
+          "Diameter": "42mm",
+          "Condition": "Very Good",
+          "Notes": "Pre-moon calibre 861. Original 1171 bracelet. Tritium dial with patina. Hesalite crystal. Purchased from a retired NASA engineer's estate."
+        }
+      },
+      {
+        "template": "Watch",
+        "fields": {
+          "Title": "Rolex Submariner 5513",
+          "Brand": "Rolex",
+          "Reference": "5513",
+          "Year": 1972,
+          "Movement": "Automatic",
+          "Case Material": "Stainless Steel",
+          "Diameter": "40mm",
+          "Condition": "Good",
+          "Notes": "Matte dial, meters-first. Original 9315 Oyster bracelet with 380 end links. Service history unknown. Crystal replaced."
+        }
+      },
+      {
+        "template": "Watch",
+        "fields": {
+          "Title": "Tudor Black Bay 58",
+          "Brand": "Tudor",
+          "Reference": "79030N",
+          "Year": 2020,
+          "Movement": "Automatic",
+          "Case Material": "Stainless Steel",
+          "Diameter": "39mm",
+          "Condition": "Mint",
+          "Notes": "Full kit — box, papers, warranty card, hang tag. Worn twice. Tudor manufacture calibre MT5402."
+        }
+      },
+      {
+        "template": "Watch",
+        "fields": {
+          "Title": "Heuer Autavia 2446C",
+          "Brand": "Heuer",
+          "Reference": "2446C",
+          "Year": 1968,
+          "Movement": "Manual",
+          "Case Material": "Stainless Steel",
+          "Diameter": "40mm",
+          "Condition": "Good",
+          "Notes": "Joubert compressor case. Valjoux 72 movement, recently serviced. Reverse panda dial. Replacement Tropic strap."
+        }
+      },
+      {
+        "template": "Watch",
+        "fields": {
+          "Title": "Seiko 6139-6005 Pogue",
+          "Brand": "Seiko",
+          "Reference": "6139-6005",
+          "Year": 1973,
+          "Movement": "Automatic",
+          "Case Material": "Stainless Steel",
+          "Diameter": "41mm",
+          "Condition": "Very Good",
+          "Notes": "The 'Pogue' — named after astronaut William Pogue who wore one on Skylab. Yellow dial, Pepsi bezel. Original bracelet. English/Kanji day wheel."
+        }
+      },
+      {
+        "template": "Watch",
+        "fields": {
+          "Title": "Universal Genève Polerouter Date",
+          "Brand": "Universal Genève",
+          "Reference": "869112/01",
+          "Year": 1962,
+          "Movement": "Automatic",
+          "Case Material": "Gold",
+          "Diameter": "35mm",
+          "Condition": "Excellent",
+          "Notes": "Microtor movement — the world's thinnest automatic at the time. 18K gold case. Champagne crosshair dial. Designed by Gérald Genta."
+        }
+      },
+      {
+        "template": "Watch",
+        "fields": {
+          "Title": "Longines Flagship Heritage",
+          "Brand": "Longines",
+          "Reference": "L4.795.4",
+          "Year": 2018,
+          "Movement": "Automatic",
+          "Case Material": "Stainless Steel",
+          "Diameter": "38.5mm",
+          "Condition": "Excellent",
+          "Notes": "Clean, dressy, everyday wearer. L619 movement based on ETA 2892. Silver dial. Alligator strap."
+        }
+      },
+      {
+        "template": "Watch",
+        "fields": {
+          "Title": "Zenith El Primero A386 Revival",
+          "Brand": "Zenith",
+          "Reference": "03.A386.400",
+          "Year": 2019,
+          "Movement": "Automatic",
+          "Case Material": "Stainless Steel",
+          "Diameter": "38mm",
+          "Condition": "Mint",
+          "Notes": "Reissue of the legendary 1969 El Primero. The world's first automatic chronograph movement (debated with Seiko and Heuer). Tri-color dial. Full kit."
+        }
+      },
+      {
+        "template": "Watch",
+        "fields": {
+          "Title": "Rolex Datejust 1601",
+          "Brand": "Rolex",
+          "Reference": "1601",
+          "Year": 1975,
+          "Movement": "Automatic",
+          "Case Material": "Two-Tone",
+          "Diameter": "36mm",
+          "Condition": "Very Good",
+          "Notes": "Steel and 14K gold. Jubilee bracelet. Silver linen dial — the texture catches light beautifully. Acrylic crystal with cyclops. Cal. 1570."
+        }
+      },
+      {
+        "template": "Watch",
+        "fields": {
+          "Title": "Seiko Presage Cocktail Time SRPB43",
+          "Brand": "Seiko",
+          "Reference": "SRPB43",
+          "Year": 2021,
+          "Movement": "Automatic",
+          "Case Material": "Stainless Steel",
+          "Diameter": "40.5mm",
+          "Condition": "Excellent",
+          "Notes": "The watch that launched a thousand enthusiasts. Blue gradient 'Starlight' dial. Hardlex crystal. 4R35 movement. Punches well above its price point."
+        }
+      },
+      {
+        "template": "Watch",
+        "fields": {
+          "Title": "Omega Seamaster 300 SMPC",
+          "Brand": "Omega",
+          "Reference": "210.30.42.20.01.001",
+          "Year": 2022,
+          "Movement": "Automatic",
+          "Case Material": "Stainless Steel",
+          "Diameter": "42mm",
+          "Condition": "Mint",
+          "Notes": "Master Chronometer certified. Ceramic bezel with enamel. Co-Axial 8800 movement. Wave dial. One of the best modern dive watches made."
+        }
+      },
+      {
+        "template": "Watch",
+        "fields": {
+          "Title": "Heuer Monaco 1133B",
+          "Brand": "Heuer",
+          "Reference": "1133B",
+          "Year": 1971,
+          "Movement": "Automatic",
+          "Case Material": "Stainless Steel",
+          "Diameter": "40mm",
+          "Condition": "Fair",
+          "Notes": "The Steve McQueen watch (Le Mans, 1971). Blue dial, Cal. 11 movement. Case shows its age — honest patina. Crystal scratched but original. A grail piece with stories to tell."
+        }
+      }
+    ]
+  }
+}

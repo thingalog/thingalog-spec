@@ -1,0 +1,28 @@
+{
+  "catdef": "1.0",
+
+  "product": {
+    "name": "Minimal Catalog",
+    "slug": "minimal"
+  },
+
+  "templates": [
+    {
+      "name": "Item",
+      "field_defs": [
+        {"label": "Title", "type": "String", "sort_order": 10, "required": true}
+      ]
+    }
+  ],
+
+  "data": {
+    "items": [
+      {
+        "template": "Item",
+        "fields": {
+          "Title": "First Item"
+        }
+      }
+    ]
+  }
+}
