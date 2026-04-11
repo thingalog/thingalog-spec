@@ -1,21 +1,29 @@
-# catdef — Catalog Definition Specification v1.1
+# catdef — Specification v1.1
 
 ## Overview
 
-A **catdef** (catalog definition) is a single JSON document that fully describes a data application for cataloging any kind of collection. Any conforming runtime — browser JS, Docker container, Cloudflare Worker, WASM binary, AI artifact — can read a catdef and render a working, interactive catalog application.
+**catdef** is an open standard for machine-enhanceable descriptors of real-world objects and catalogs. It defines two complementary concepts:
 
-The catdef is to catalog applications what HTML is to documents: a portable, runtime-independent specification that separates content from implementation.
+- **OpenThing** — a schema for describing any real-world object: its properties, measurements, classifications, provenance, and media. A template with field definitions.
+- **OpenCatalog** — a schema for organizing collections of things: identity, branding, search, social features, and presentation settings.
 
-catdef is designed to serve the full spectrum of cataloging needs — from a hobbyist's watch collection to a museum's accession database, from an e-commerce product catalog to a real estate listing system. The field types, validation attributes, and widget system are drawn from real-world catalog standards including Dublin Core, MARC, PIM systems, and inventory management platforms.
+A catdef document is a single JSON file that can express either or both. A minimal catdef describes one thing. A full catdef describes an entire catalog application with hundreds of things, each richly classified.
+
+Any conforming runtime — browser JS, Docker container, Cloudflare Worker, WASM binary, AI artifact — can read a catdef and render a working application. The catdef is to structured collections what HTML is to documents: a portable, runtime-independent specification that separates content from implementation.
+
+An AI that can see a photograph can write a catdef. A human with a spreadsheet can write a catdef. A sensor on a factory floor can write a catdef. The format is designed to be produced and consumed by both humans and machines, with each enhancing the other's work.
+
+catdef is designed to serve the full spectrum of classification needs — from a hobbyist's watch collection to a museum's accession database, from an e-commerce product catalog to a field biologist's specimen log. The field types, validation attributes, and widget system are drawn from real-world standards including Dublin Core, MARC, PIM systems, and inventory management platforms.
 
 ## Design Principles
 
 1. **One file, complete product.** A catdef contains everything needed to go from zero to running application: identity, branding, schema, settings, and runtime hints.
 2. **Declarative, not imperative.** The catdef says *what*, never *how*. It never specifies a database engine, a programming language, or a hosting provider.
 3. **Forward-compatible.** A v1.0 renderer encountering a v1.3 catdef gracefully ignores fields it doesn't understand. New capabilities degrade, never break.
-4. **AI-generable.** Every part of the catdef can be produced by a conversational AI from a natural language description. No field requires technical knowledge to specify.
+4. **AI-generable.** Every part of the catdef can be produced by a conversational AI — or by AI vision analyzing photographs. No field requires technical knowledge to specify.
 5. **Human-readable.** The catdef is JSON with clear key names. A non-developer can read it and understand what their catalog will contain.
-6. **Domain-agnostic.** The same field types and patterns work for watches, wines, real estate, museum artifacts, library holdings, inventory, and anything else worth cataloging.
+6. **Domain-agnostic.** The same field types and patterns work for watches, wines, real estate, museum artifacts, library holdings, inventory, biological specimens, and anything else worth classifying.
+7. **Thing-first.** The fundamental unit is the *thing* — a real-world object with structured metadata. Catalogs are collections of things, but a thing can exist independently.
 
 ## Top-Level Structure
 
