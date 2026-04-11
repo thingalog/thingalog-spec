@@ -1,10 +1,12 @@
-# catdef.json — Specification v1.0
+# catdef — Catalog Definition Specification v1.1
 
 ## Overview
 
-A **catdef** (catalog definition) is a single JSON document that fully describes a data application. Any conforming runtime — browser JS, Docker container, Cloudflare Worker, WASM binary, Claude artifact — can read a catdef and render a working, interactive catalog application.
+A **catdef** (catalog definition) is a single JSON document that fully describes a data application for cataloging any kind of collection. Any conforming runtime — browser JS, Docker container, Cloudflare Worker, WASM binary, AI artifact — can read a catdef and render a working, interactive catalog application.
 
 The catdef is to catalog applications what HTML is to documents: a portable, runtime-independent specification that separates content from implementation.
+
+catdef is designed to serve the full spectrum of cataloging needs — from a hobbyist's watch collection to a museum's accession database, from an e-commerce product catalog to a real estate listing system. The field types, validation attributes, and widget system are drawn from real-world catalog standards including Dublin Core, MARC, PIM systems, and inventory management platforms.
 
 ## Design Principles
 
@@ -13,12 +15,13 @@ The catdef is to catalog applications what HTML is to documents: a portable, run
 3. **Forward-compatible.** A v1.0 renderer encountering a v1.3 catdef gracefully ignores fields it doesn't understand. New capabilities degrade, never break.
 4. **AI-generable.** Every part of the catdef can be produced by a conversational AI from a natural language description. No field requires technical knowledge to specify.
 5. **Human-readable.** The catdef is JSON with clear key names. A non-developer can read it and understand what their catalog will contain.
+6. **Domain-agnostic.** The same field types and patterns work for watches, wines, real estate, museum artifacts, library holdings, inventory, and anything else worth cataloging.
 
 ## Top-Level Structure
 
 ```json
 {
-  "catdef": "1.0",
+  "catdef": "1.1",
 
   "product": { ... },
   "requires": { ... },
@@ -42,10 +45,10 @@ The identity and branding of the catalog application.
   "product": {
     "name": "Scott's Watch Collection",
     "slug": "scottswatches",
-    "domain": "scottswatches.thingalog.app",
+    "domain": "scottswatches.example.com",
     "tagline": "Vintage timepieces, documented",
     "description": "A curated catalog of vintage mechanical watches collected over 30 years.",
-    "contact_email": "scott@confusedgorilla.com",
+    "contact_email": "scott@example.com",
     "owner": "Scott Welch",
     "logo_url": "",
     "theme": "Midnight"
@@ -56,14 +59,14 @@ The identity and branding of the catalog application.
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `name` | string | yes | Display name of the catalog |
-| `slug` | string | yes | URL-safe identifier. Used for subdomain: `{slug}.thingalog.app` |
-| `domain` | string | no | Full domain if custom (e.g., `scottswatches.com`). Defaults to `{slug}.thingalog.app` |
+| `slug` | string | yes | URL-safe identifier. Used for subdomain routing by platforms that support it |
+| `domain` | string | no | Full custom domain if applicable |
 | `tagline` | string | no | Short subtitle, displayed in header |
 | `description` | string | no | Longer description, used in meta tags and AI context |
-| `contact_email` | string | no | Owner's contact email (captured conversationally during onboarding) |
+| `contact_email` | string | no | Owner's contact email |
 | `owner` | string | no | Display name of the catalog owner |
 | `logo_url` | string | no | URL to a logo image |
-| `theme` | string or object | no | Either a theme name (resolved from marketplace) or an inline theme object |
+| `theme` | string or object | no | Either a theme name (resolved by the runtime) or an inline theme object |
 
 ### Inline Theme Object
 
@@ -99,8 +102,8 @@ Declares the capabilities the catdef needs from the runtime. Used for compatibil
   "requires": {
     "renderer": ">=1.0",
     "features": ["photos", "social", "embed", "export"],
-    "field_types": ["String", "Integer", "RichText", "Enumerated", "Photo", "Table", "CloudFile", "URL"],
-    "widgets": ["autocomplete", "dropdown", "checkbox_table", "table"]
+    "field_types": ["String", "Integer", "Number", "RichText", "Enumerated", "Photo", "Date", "Money"],
+    "widgets": ["autocomplete", "dropdown", "checkbox_table", "rating"]
   }
 }
 ```
@@ -150,7 +153,7 @@ Non-binding guidance to help the runtime choose infrastructure. The runtime MAY 
 |---------|-------------------|
 | ≤50 items, no photos | Browser-only (in-memory, LocalStorage) |
 | ≤500 items, photos | Lightweight server (SQLite + file storage) |
-| ≤5000 items, heavy media | Full server (Neo4j/Postgres + object storage) |
+| ≤5000 items, heavy media | Full server (Postgres/Neo4j + object storage) |
 | >5000 items or realtime | Scaled infrastructure |
 
 ---
@@ -183,22 +186,17 @@ One or more item templates. Each template defines a kind of thing in the catalog
 
 ```json
 {
-  "label": "Complications",
-  "type": "Table",
+  "label": "Case Diameter",
+  "type": "Number",
   "sort_order": 70,
-  "target": "Complication",
-  "multi": true,
+  "unit": "mm",
+  "precision": 1,
+  "min": 10,
+  "max": 60,
   "required": false,
   "importance": "preferred",
   "filterable": true,
-  "widget": "table",
-  "placeholder": "Add complications...",
-  "help_text": "List the watch's complications (moon phase, chronograph, etc.)",
-  "columns": [
-    {"label": "Subdial Position", "type": "String"},
-    {"label": "Phase Count", "type": "Integer"},
-    {"label": "Notes", "type": "String"}
-  ]
+  "placeholder": "e.g. 42"
 }
 ```
 
@@ -208,7 +206,7 @@ One or more item templates. Each template defines a kind of thing in the catalog
 | `type` | string | yes | — | Field type. See Field Types below |
 | `sort_order` | integer | yes | — | Display order (ascending). Gaps allowed (10, 20, 30...) |
 | `target` | string | conditional | `""` | For Enumerated/Table types: the label namespace for Value nodes |
-| `multi` | boolean | no | `false` | Whether multiple values can be attached |
+| `multi` | boolean | no | `false` | Whether multiple values can be attached (Enumerated, Photo) |
 | `required` | boolean | no | `false` | Whether the field must have a value before save |
 | `importance` | string | no | `"optional"` | For health score: `"required"`, `"preferred"`, or `"optional"` |
 | `filterable` | boolean | no | `false` | Whether the list view shows a filter dropdown for this field |
@@ -216,6 +214,16 @@ One or more item templates. Each template defines a kind of thing in the catalog
 | `placeholder` | string | no | `""` | Placeholder text in the empty input |
 | `help_text` | string | no | `""` | Tooltip or helper text for the field |
 | `columns` | array | conditional | — | For Table type: sub-field definitions for each column |
+| `unique` | boolean | no | `false` | Whether values must be unique across items (for identifiers: SKU, accession number, ISBN) |
+| `default` | any | no | — | Default value for new items. Type must match the field type |
+| `format` | string | no | `""` | For String type: named validation format or regex. See String Formats below |
+| `unit` | string | no | `""` | For Number type: display unit (e.g. `"mm"`, `"kg"`, `"sqft"`, `"ml"`) |
+| `precision` | integer | no | — | For Number type: decimal places to display |
+| `min` | number | no | — | For Number/Integer/Date: minimum allowed value |
+| `max` | number | no | — | For Number/Integer/Date: maximum allowed value |
+| `step` | number | no | — | For Number/Integer: input step increment |
+| `circa` | boolean | no | `false` | For Date type: whether approximate dates are allowed ("c. 1850") |
+| `currency` | string | no | `""` | For Money type: default ISO 4217 currency code (e.g. `"USD"`, `"EUR"`) |
 
 ---
 
@@ -223,21 +231,120 @@ One or more item templates. Each template defines a kind of thing in the catalog
 
 | Type | Value Storage | Description |
 |------|---------------|-------------|
-| `String` | Inline on Field node | Single-line text |
-| `Integer` | Inline on Field node | Whole number |
-| `RichText` | Inline on Field node | Multi-line formatted text (HTML) |
-| `Enumerated` | Edge to `:Value` node | Pick from (or create) shared values. Dedupe by name (case-insensitive) |
-| `Photo` | Edge to `:Photo` node | An image with storage path, dimensions, metadata. Single photo per field |
-| `Table` | Edges to `:Value` nodes with sub-fields | Structured multi-row data. Each row is a Value node with its own Fields defined by `columns` |
-| `CloudFile` | Inline (URL + provider metadata) | Pointer to a file in Dropbox/GDrive/OneDrive/Box. Not downloaded, just referenced |
-| `URL` | Inline | A web URL with auto-extracted title, description, og:image |
-| `Date` | Inline | ISO 8601 date string |
-| `Money` | Inline (amount + currency) | Monetary value with currency code |
+| `String` | Inline | Single-line text. Optionally validated by `format` |
+| `Integer` | Inline | Whole number. Optionally bounded by `min`/`max` |
+| `Number` | Inline | Decimal number with optional `unit`, `precision`, `min`, `max`, `step`. Use for measurements, dimensions, percentages, scores, quantities — anything that isn't a whole number or money |
+| `RichText` | Inline | Multi-line formatted text (HTML subset) |
+| `Enumerated` | Edge to Value node | Pick from (or create) shared values. Dedupe by name (case-insensitive). Requires `target` |
+| `Photo` | Edge to Photo node | An image with storage path, dimensions, metadata. Supports `multi: true` for galleries |
+| `Table` | Edges to Value nodes with sub-fields | Structured multi-row data. Each row is a Value node with its own Fields defined by `columns` |
+| `CloudFile` | Inline (URL + provider metadata) | Pointer to a file in cloud storage (Dropbox, GDrive, OneDrive, Box). Not downloaded, just referenced |
+| `URL` | Inline | A web URL with optional auto-extracted title, description, og:image |
+| `Date` | Inline | ISO 8601 date string. Supports `circa: true` for approximate dates. Optionally bounded by `min`/`max` |
+| `Money` | Inline (amount + currency) | Monetary value with ISO 4217 currency code |
 | `Boolean` | Inline | True/false toggle |
+| `GeoLocation` | Inline (lat + lng + address + label) | Geographic coordinates with optional structured address. Enables map rendering and distance filtering |
 
-Runtimes MUST support: `String`, `Integer`, `RichText`, `Enumerated`, `Photo`.
-Runtimes SHOULD support: `Table`, `URL`, `Date`, `Money`, `Boolean`.
-Runtimes MAY support: `CloudFile`.
+**Support requirements:**
+- Runtimes MUST support: `String`, `Integer`, `RichText`, `Enumerated`, `Photo`.
+- Runtimes SHOULD support: `Number`, `Table`, `URL`, `Date`, `Money`, `Boolean`, `GeoLocation`.
+- Runtimes MAY support: `CloudFile`.
+
+### Number Type
+
+`Number` is the workhorse for physical measurements, scores, percentages, and quantities — anything where sorting, comparison, and unit display matter.
+
+```json
+{"label": "Case Diameter",  "type": "Number", "unit": "mm", "precision": 1, "min": 10, "max": 60}
+{"label": "Weight",         "type": "Number", "unit": "g",  "precision": 0}
+{"label": "ABV",            "type": "Number", "unit": "%",  "precision": 1, "min": 0, "max": 100}
+{"label": "Mileage",        "type": "Number", "unit": "km", "precision": 0}
+{"label": "Square Footage", "type": "Number", "unit": "sqft", "precision": 0}
+{"label": "Rating",         "type": "Number", "min": 0, "max": 100, "step": 0.5, "widget": "rating"}
+```
+
+When `unit` is present, the runtime SHOULD display it as a suffix (e.g. "42 mm", "13.5%"). The value stored is always the raw number; the unit is metadata.
+
+### GeoLocation Type
+
+`GeoLocation` stores geographic coordinates with an optional human-readable address. Enables map views, distance-based sorting, and geo-filtering.
+
+```json
+{"label": "Location", "type": "GeoLocation"}
+```
+
+**Value shape:**
+```json
+{
+  "lat": 48.8566,
+  "lng": 2.3522,
+  "address": "Musée du Louvre, Rue de Rivoli, 75001 Paris, France",
+  "label": "Louvre Museum"
+}
+```
+
+At minimum, `lat` and `lng` must be present. `address` and `label` are optional display strings.
+
+### Date Type Extensions
+
+`Date` stores an ISO 8601 date string. When `circa` is `true` on the field definition, the runtime SHOULD accept and display approximate dates:
+
+```json
+{"label": "Year Made", "type": "Date", "circa": true}
+```
+
+**Value shapes:**
+- Exact: `"2024-06-15"` → displayed as "June 15, 2024"
+- Year only: `"1850"` → displayed as "1850"
+- Approximate: `{"date": "1850", "circa": true}` → displayed as "c. 1850"
+- Range: `{"start": "1845", "end": "1855"}` → displayed as "1845–1855"
+
+### Money Type
+
+`Money` stores a monetary value with an ISO 4217 currency code. The field def may specify a `currency` default.
+
+```json
+{"label": "Purchase Price", "type": "Money", "currency": "USD"}
+```
+
+**Value shape:**
+```json
+{"amount": 4500.00, "currency": "USD"}
+```
+
+If the value omits `currency`, the field def's `currency` default is used. The runtime SHOULD format according to the currency's conventions (e.g. "$4,500.00" for USD, "€4.500,00" for EUR).
+
+### Photo Type with Galleries
+
+When `multi: true` is set on a Photo field, the field represents an ordered gallery rather than a single image.
+
+```json
+{"label": "Photos", "type": "Photo", "multi": true, "importance": "required"}
+```
+
+The runtime stores an ordered list of photos with per-photo captions and a designated hero/primary image. This replaces the pattern of creating multiple single-photo fields ("Photo (Front)", "Photo (Back)").
+
+### String Formats
+
+The `format` attribute on a String field enables validation and specialized rendering without creating new field types. Named formats provide well-known validation rules; custom formats use regex.
+
+| Format | Description | Example |
+|--------|-------------|---------|
+| `email` | Email address. Renders as `mailto:` link | `scott@example.com` |
+| `phone` | Phone number. Renders as `tel:` link | `+1-555-123-4567` |
+| `isbn` | ISBN-10 or ISBN-13 with check digit validation | `978-0-13-468599-1` |
+| `issn` | ISSN with check digit validation | `0378-5955` |
+| `doi` | Digital Object Identifier | `10.1000/xyz123` |
+| `vin` | Vehicle Identification Number (17 chars, checksum) | `1HGBH41JXMN109186` |
+| `upc` | UPC-A barcode (12 digits) | `012345678905` |
+| `ean` | EAN-13 barcode (13 digits) | `4006381333931` |
+| `sku` | Stock Keeping Unit (freeform, but unique) | `WCH-OMG-SPD-001` |
+| `accession` | Museum accession number (freeform, unique) | `2024.001.003` |
+| `hex_color` | Hex color code. Renders as color swatch | `#1a365d` |
+
+Custom regex: `"format": "^[A-Z]{2}-\\d{4}$"` (any string starting with `^` is treated as a regex pattern).
+
+When a named format implies uniqueness (e.g. `isbn`, `vin`, `sku`, `accession`), the runtime SHOULD enforce uniqueness even if `unique` is not explicitly set.
 
 ---
 
@@ -249,16 +356,20 @@ Widgets control how a field is presented in the UI. The runtime selects a defaul
 |--------|----------|-------------|
 | `text` | String, Integer | Single-line input |
 | `textarea` | RichText | Multi-line editor |
-| `number` | Integer, Money | Numeric input with validation |
+| `number` | Integer, Number, Money | Numeric input with validation |
 | `autocomplete` | Enumerated (open-ended) | Type-ahead with find-or-create |
 | `dropdown` | Enumerated (closed set) | Single or multi select dropdown |
 | `checkbox_table` | Enumerated (multi, all visible) | All options displayed with checkboxes |
 | `table` | Table | Rows with sub-columns |
-| `photo` | Photo | Upload/capture with preview |
+| `photo` | Photo | Upload/capture with preview. Gallery mode when multi:true |
 | `url` | URL | Input with auto-preview (favicon, og:image) |
 | `file_picker` | CloudFile | OAuth-connected cloud file browser |
-| `date` | Date | Date picker |
+| `date` | Date | Date picker. Supports circa mode and ranges |
 | `toggle` | Boolean | On/off switch |
+| `rating` | Number (bounded) | Star rating, slider, or gauge. Requires `min`/`max` |
+| `map` | GeoLocation | Map pin picker with address autocomplete |
+| `color_swatch` | String (format: hex_color) | Color picker with swatch preview |
+| `barcode` | String (format: upc/ean) | Barcode renderer with scan input |
 
 ### Default Widget Selection
 
@@ -266,16 +377,19 @@ Widgets control how a field is presented in the UI. The runtime selects a defaul
 |------------|----------------|
 | String | `text` |
 | Integer | `number` |
+| Number | `number` |
 | RichText | `textarea` |
 | Enumerated (multi:false) | `autocomplete` |
 | Enumerated (multi:true) | `autocomplete` |
-| Photo | `photo` |
+| Photo (multi:false) | `photo` |
+| Photo (multi:true) | `photo` (gallery mode) |
 | Table | `table` |
 | CloudFile | `file_picker` |
 | URL | `url` |
 | Date | `date` |
 | Money | `number` |
 | Boolean | `toggle` |
+| GeoLocation | `map` |
 
 ---
 
@@ -300,7 +414,7 @@ Catalog-level feature flags and configuration.
     },
     "inquire": {
       "enabled": true,
-      "recipient_email": "scott@confusedgorilla.com",
+      "recipient_email": "owner@example.com",
       "ai_assistant": true
     },
     "export": {
@@ -326,13 +440,13 @@ All settings are optional. Omitted settings use the runtime's defaults (which SH
 
 ```json
 {
-  "catdef": "1.0",
+  "catdef": "1.1",
 
   "product": {
     "name": "Scott's Watch Collection",
     "slug": "scottswatches",
     "tagline": "Vintage timepieces, documented",
-    "contact_email": "scott@confusedgorilla.com",
+    "contact_email": "scott@example.com",
     "theme": {
       "accent": "#1a365d",
       "bg": "#0d1117",
@@ -344,7 +458,7 @@ All settings are optional. Omitted settings use the runtime's defaults (which SH
   "requires": {
     "renderer": ">=1.0",
     "features": ["photos", "social", "embed", "export"],
-    "field_types": ["String", "Integer", "RichText", "Enumerated", "Photo", "Table"]
+    "field_types": ["String", "Integer", "Number", "RichText", "Enumerated", "Photo", "Date", "Money"]
   },
 
   "hints": {
@@ -364,11 +478,11 @@ All settings are optional. Omitted settings use the runtime's defaults (which SH
       "field_defs": [
         {"label": "Title",            "type": "String",     "sort_order": 10, "required": true, "importance": "required", "placeholder": "e.g. Omega Speedmaster Professional 145.022"},
         {"label": "Brand",            "type": "Enumerated", "sort_order": 20, "target": "Brand", "filterable": true, "importance": "required", "widget": "autocomplete"},
-        {"label": "Reference",        "type": "String",     "sort_order": 30, "importance": "preferred", "placeholder": "e.g. 145.022-69"},
-        {"label": "Year",             "type": "Integer",    "sort_order": 40, "importance": "preferred"},
+        {"label": "Reference",        "type": "String",     "sort_order": 30, "importance": "preferred", "format": "sku", "unique": true, "placeholder": "e.g. 145.022-69"},
+        {"label": "Year",             "type": "Integer",    "sort_order": 40, "importance": "preferred", "min": 1800, "max": 2030},
         {"label": "Movement",         "type": "Enumerated", "sort_order": 50, "target": "Movement", "filterable": true, "widget": "dropdown"},
         {"label": "Case Material",    "type": "Enumerated", "sort_order": 60, "target": "Material", "filterable": true},
-        {"label": "Case Diameter",    "type": "String",     "sort_order": 70, "placeholder": "e.g. 42mm"},
+        {"label": "Case Diameter",    "type": "Number",     "sort_order": 70, "unit": "mm", "precision": 1, "min": 20, "max": 55, "placeholder": "e.g. 42"},
         {"label": "Complications",    "type": "Table",      "sort_order": 80, "target": "Complication", "multi": true, "widget": "table", "columns": [
           {"label": "Complication", "type": "String"},
           {"label": "Subdial", "type": "String"},
@@ -376,14 +490,12 @@ All settings are optional. Omitted settings use the runtime's defaults (which SH
         ]},
         {"label": "Condition",        "type": "Enumerated", "sort_order": 90,  "target": "Grade", "widget": "dropdown"},
         {"label": "Box & Papers",     "type": "Enumerated", "sort_order": 100, "target": "Completeness", "widget": "dropdown"},
-        {"label": "Photo (Front)",    "type": "Photo",      "sort_order": 110, "importance": "required"},
-        {"label": "Photo (Back)",     "type": "Photo",      "sort_order": 120, "importance": "preferred"},
-        {"label": "Photo (Movement)", "type": "Photo",      "sort_order": 130},
-        {"label": "Purchase Price",   "type": "Money",      "sort_order": 140},
-        {"label": "Purchased From",   "type": "Enumerated", "sort_order": 150, "target": "Dealer"},
-        {"label": "Purchase Date",    "type": "Date",       "sort_order": 160},
-        {"label": "Service History",  "type": "RichText",   "sort_order": 170, "importance": "preferred"},
-        {"label": "Notes",            "type": "RichText",   "sort_order": 180}
+        {"label": "Photos",           "type": "Photo",      "sort_order": 110, "multi": true, "importance": "required"},
+        {"label": "Purchase Price",   "type": "Money",      "sort_order": 120, "currency": "USD"},
+        {"label": "Purchased From",   "type": "Enumerated", "sort_order": 130, "target": "Dealer"},
+        {"label": "Purchase Date",    "type": "Date",       "sort_order": 140},
+        {"label": "Service History",  "type": "RichText",   "sort_order": 150, "importance": "preferred"},
+        {"label": "Notes",            "type": "RichText",   "sort_order": 160}
       ]
     }
   ],
@@ -394,6 +506,109 @@ All settings are optional. Omitted settings use the runtime's defaults (which SH
     "social": {"likes": true, "favourites": true, "comments": true, "view_tracking": true},
     "inquire": {"enabled": true, "ai_assistant": true},
     "export": {"pdf": true, "excel": true, "zip": true},
+    "health_score": {"enabled": true, "grading": "letter"},
+    "history": true,
+    "trash": true
+  }
+}
+```
+
+---
+
+## Complete Example: E-Commerce Product Catalog
+
+```json
+{
+  "catdef": "1.1",
+
+  "product": {
+    "name": "Artisan Ceramics Shop",
+    "slug": "artisan-ceramics",
+    "tagline": "Handmade pottery, direct from the studio"
+  },
+
+  "requires": {
+    "renderer": ">=1.0",
+    "field_types": ["String", "Number", "Enumerated", "Photo", "Money", "Boolean"]
+  },
+
+  "templates": [
+    {
+      "name": "Product",
+      "icon": "🏺",
+      "field_defs": [
+        {"label": "Name",           "type": "String",     "sort_order": 10, "required": true},
+        {"label": "SKU",            "type": "String",     "sort_order": 15, "format": "sku", "unique": true},
+        {"label": "Category",       "type": "Enumerated", "sort_order": 20, "target": "Category", "filterable": true},
+        {"label": "Price",          "type": "Money",      "sort_order": 30, "currency": "USD", "required": true},
+        {"label": "Cost",           "type": "Money",      "sort_order": 35, "currency": "USD"},
+        {"label": "Weight",         "type": "Number",     "sort_order": 40, "unit": "g", "precision": 0},
+        {"label": "Height",         "type": "Number",     "sort_order": 50, "unit": "cm", "precision": 1},
+        {"label": "Width",          "type": "Number",     "sort_order": 60, "unit": "cm", "precision": 1},
+        {"label": "Glaze",          "type": "Enumerated", "sort_order": 70, "target": "Glaze", "filterable": true},
+        {"label": "In Stock",       "type": "Boolean",    "sort_order": 80, "default": true},
+        {"label": "Qty Available",  "type": "Integer",    "sort_order": 85, "min": 0, "default": 1},
+        {"label": "Photos",         "type": "Photo",      "sort_order": 90, "multi": true, "importance": "required"},
+        {"label": "Description",    "type": "RichText",   "sort_order": 100}
+      ]
+    }
+  ],
+
+  "settings": {
+    "public": true,
+    "embed": {"enabled": true, "powered_by": true},
+    "inquire": {"enabled": true, "ai_assistant": true}
+  }
+}
+```
+
+---
+
+## Complete Example: Museum Accession Database
+
+```json
+{
+  "catdef": "1.1",
+
+  "product": {
+    "name": "Pacific Northwest Heritage Collection",
+    "slug": "pnw-heritage",
+    "tagline": "Preserving the material culture of the Pacific Northwest"
+  },
+
+  "requires": {
+    "renderer": ">=1.0",
+    "field_types": ["String", "Integer", "Number", "RichText", "Enumerated", "Photo", "Date", "GeoLocation"]
+  },
+
+  "templates": [
+    {
+      "name": "Artifact",
+      "icon": "🏛️",
+      "field_defs": [
+        {"label": "Title",            "type": "String",      "sort_order": 10, "required": true},
+        {"label": "Accession Number", "type": "String",      "sort_order": 15, "format": "accession", "unique": true, "placeholder": "e.g. 2024.001.003"},
+        {"label": "Creator",          "type": "Enumerated",  "sort_order": 20, "target": "Person", "multi": true, "filterable": true},
+        {"label": "Date Created",     "type": "Date",        "sort_order": 30, "circa": true},
+        {"label": "Object Type",      "type": "Enumerated",  "sort_order": 40, "target": "ObjectType", "filterable": true},
+        {"label": "Material",         "type": "Enumerated",  "sort_order": 50, "target": "Material", "multi": true, "filterable": true},
+        {"label": "Height",           "type": "Number",      "sort_order": 60, "unit": "cm", "precision": 1},
+        {"label": "Width",            "type": "Number",      "sort_order": 65, "unit": "cm", "precision": 1},
+        {"label": "Depth",            "type": "Number",      "sort_order": 67, "unit": "cm", "precision": 1},
+        {"label": "Weight",           "type": "Number",      "sort_order": 68, "unit": "g", "precision": 0},
+        {"label": "Origin",           "type": "GeoLocation", "sort_order": 70},
+        {"label": "Location",         "type": "Enumerated",  "sort_order": 75, "target": "Location", "filterable": true},
+        {"label": "Condition",        "type": "Enumerated",  "sort_order": 80, "target": "Condition", "widget": "dropdown"},
+        {"label": "Provenance",       "type": "RichText",    "sort_order": 90},
+        {"label": "Photos",           "type": "Photo",       "sort_order": 100, "multi": true},
+        {"label": "Estimated Value",  "type": "Money",       "sort_order": 110, "currency": "USD"},
+        {"label": "Notes",            "type": "RichText",    "sort_order": 120}
+      ]
+    }
+  ],
+
+  "settings": {
+    "public": true,
     "health_score": {"enabled": true, "grading": "letter"},
     "history": true,
     "trash": true
@@ -415,21 +630,20 @@ All settings are optional. Omitted settings use the runtime's defaults (which SH
 - Level 1 plus: search, sort, filter, export, history, trash
 - Persistent storage (SQLite, flat files, or equivalent)
 - Photo upload and storage
-- API endpoints per the Thingalog API spec
+- API endpoints per the catdef API spec
 
 ### Level 3: Full (graph-native)
 - Level 2 plus: social layer, embed, inquire, comments, health score
-- Graph database (Neo4j or equivalent)
+- Graph database or equivalent
 - Real-time collaborative filtering
 - Multi-tenant support
-- Template marketplace integration
+- Template sharing
 
-### Level 4: Platform (Thingalog.app)
+### Level 4: Platform
 - Level 3 plus: AI onboarding, custom domains, billing, wildcard subdomains
-- Theme marketplace
-- Template marketplace
+- Theme and template marketplace
 - Browser plugin integration
-- Conversii support integration
+- Federated catalog discovery
 
 ---
 
@@ -450,18 +664,21 @@ A catdef MUST specify its version. A runtime MUST refuse to render a catdef with
 - The `contact_email` field is visible to anyone who can read the catdef. Do not include private emails unless the catalog is private.
 - Theme objects MUST be sanitized by the runtime before applying as CSS variables (no `url()`, no `expression()`, no script injection).
 - The `domain` field is a claim, not proof of ownership. The runtime MUST verify domain ownership before serving on a custom domain.
+- String `format` regex patterns MUST be validated in a sandbox (no ReDoS). Runtimes SHOULD impose a maximum pattern length and execution timeout.
 
 ---
 
 ## MIME Type
 
-`application/vnd.thingalog.catdef+json`
+`application/vnd.catdef+json`
 
-## File Extension
+## File Extensions
 
-`.catdef.json` or `.catdef`
+`.thingalog` — a catdef document with optional embedded data (items, values, photos). The canonical portable format.
+
+`.catdef.json` — a catdef document (schema only, no data). Used for template definitions and starter kits.
 
 ---
 
-*Specification version 1.0. April 2026.*
-*Created by Scott Chicken and Claude (Anthropic).*
+*Specification version 1.1. April 2026.*
+*An open standard. Licensed under MIT.*
