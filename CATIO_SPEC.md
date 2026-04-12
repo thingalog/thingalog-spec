@@ -215,18 +215,20 @@ catio version follows semver, independent of catdef version. A catio 1.0 envelop
 
 | Type | MIME |
 |------|------|
-| Single thing | `application/vnd.catdef.thing+json` |
-| Collection | `application/vnd.catdef.collection+json` |
-| Catalog | `application/vnd.catdef+json` |
-| Schema | `application/vnd.catdef.schema+json` |
+| Single thing | `application/vnd.openthing+json` |
+| Collection | `application/vnd.opencatalog+json` |
+| Catalog | `application/vnd.opencatalog+json` |
+| Schema | `application/vnd.catdef+json` |
 
 ## File Extensions
 
 | Extension | Contents |
 |-----------|----------|
-| `.thingalog` | Any catio document (catalog, collection, or single thing with optional data) |
-| `.catdef.json` | Schema only (templates, no data) |
-| `.thing.json` | Single thing (minimal: one object, self-describing) |
+| `.openthing` | A single classified object (minimal: one real-world object, self-describing) |
+| `.opencatalog` | A complete catalog (schema + data + values + settings) or a collection of things |
+| `.catdef` | Schema only (template definitions, no data) |
+
+These extensions belong to the catdef standard, not to any runtime. Any conformant application reads and writes all three.
 
 ---
 

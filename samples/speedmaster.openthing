@@ -1,0 +1,19 @@
+{
+  "catio": "1.0",
+  "type": "thing",
+
+  "thing": {
+    "template": "Vintage Watch",
+    "fields": {
+      "Title": "Omega Speedmaster Professional 145.022",
+      "Brand": "Omega",
+      "Reference": "145.022-69 ST",
+      "Year": 1969,
+      "Movement": "Manual",
+      "Case Material": "Stainless Steel",
+      "Case Diameter": {"value": 42, "unit": "mm"},
+      "Condition": "Very Good",
+      "Notes": "Pre-moon calibre 861. Original 1171 bracelet. Tritium dial with patina. Hesalite crystal. Purchased from a retired NASA engineer's estate."
+    }
+  }
+}

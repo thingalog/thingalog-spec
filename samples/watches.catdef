@@ -1,0 +1,26 @@
+{
+  "catio": "1.0",
+  "type": "schema",
+
+  "catdef": "1.1",
+
+  "templates": [
+    {
+      "name": "Vintage Watch",
+      "description": "A mechanical or quartz timepiece",
+      "icon": "⌚",
+      "field_defs": [
+        {"label": "Title",         "type": "String",     "sort_order": 10, "required": true, "importance": "required", "placeholder": "e.g. Omega Speedmaster Professional"},
+        {"label": "Brand",         "type": "Enumerated", "sort_order": 20, "target": "Brand", "filterable": true, "importance": "required", "widget": "autocomplete"},
+        {"label": "Reference",     "type": "String",     "sort_order": 30, "importance": "preferred", "format": "sku", "unique": true, "placeholder": "e.g. 145.022-69"},
+        {"label": "Year",          "type": "Integer",    "sort_order": 40, "importance": "preferred", "min": 1800, "max": 2030},
+        {"label": "Movement",      "type": "Enumerated", "sort_order": 50, "target": "Movement", "filterable": true, "widget": "dropdown"},
+        {"label": "Case Material", "type": "Enumerated", "sort_order": 60, "target": "Material", "filterable": true},
+        {"label": "Case Diameter", "type": "Number",     "sort_order": 70, "unit": "mm", "precision": 1, "min": 20, "max": 55},
+        {"label": "Condition",     "type": "Enumerated", "sort_order": 80, "target": "Condition", "widget": "dropdown"},
+        {"label": "Photos",        "type": "Photo",      "sort_order": 90, "multi": true, "importance": "required"},
+        {"label": "Notes",         "type": "RichText",   "sort_order": 100}
+      ]
+    }
+  ]
+}

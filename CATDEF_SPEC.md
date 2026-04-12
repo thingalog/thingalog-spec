@@ -676,15 +676,23 @@ A catdef MUST specify its version. A runtime MUST refuse to render a catdef with
 
 ---
 
-## MIME Type
+## MIME Types
 
-`application/vnd.catdef+json`
+| MIME Type | Description |
+|-----------|-------------|
+| `application/vnd.openthing+json` | A single classified object |
+| `application/vnd.opencatalog+json` | A collection with schema, data, and settings |
+| `application/vnd.catdef+json` | A schema definition (templates only, no data) |
 
 ## File Extensions
 
-`.thingalog` — a catdef document with optional embedded data (items, values, photos). The canonical portable format.
+| Extension | Description |
+|-----------|-------------|
+| `.openthing` | A single classified object — the minimal unit. One real-world object with structured metadata. Opening an `.openthing` file implies a schema; a schema implies a catalog. |
+| `.opencatalog` | A complete catalog — schema, data, values, settings, theme. The full interchange format for collections. |
+| `.catdef` | Schema only — template definitions, no data. Used for starter kits, template marketplace, and "create a catalog like this." |
 
-`.catdef.json` — a catdef document (schema only, no data). Used for template definitions and starter kits.
+These extensions belong to the catdef standard, not to any runtime. Any conformant application reads and writes all three.
 
 ---
 
