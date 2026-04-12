@@ -99,6 +99,71 @@ When `theme` is an object instead of a string:
 
 All theme fields are optional. The runtime provides sensible defaults for any omitted field.
 
+### Theme Modes
+
+The `mode` field controls the overall presentation strategy. A runtime MUST support `light` and `dark`. Other modes are optional but defined here for interoperability.
+
+| Mode | Description |
+|------|-------------|
+| `light` | Light background, dark text. Default. |
+| `dark` | Dark background, light text. |
+| `kiosk` | Full-screen display mode for digital signage, museum screens, picture frames, and retail displays. See Kiosk Mode below. |
+
+### Kiosk Mode
+
+Kiosk mode transforms a catalog into a digital display. The same data, the same API — just a different presentation optimized for screens that show content without user interaction.
+
+```json
+{
+  "theme": {
+    "mode": "kiosk",
+    "accent": "#1a365d",
+    "bg": "#000000",
+    "ink": "#ffffff",
+    "kiosk": {
+      "rotation_seconds": 8,
+      "transition": "fade",
+      "layout": "hero",
+      "show_fields": ["Title", "Brand", "Year", "Condition"],
+      "hide_fields": ["Notes", "Purchase Price"],
+      "filter": {"ObjectType": ["Sculpture"]},
+      "show_qr": true,
+      "idle_dim_minutes": 30
+    }
+  }
+}
+```
+
+| Kiosk Field | Type | Default | Description |
+|-------------|------|---------|-------------|
+| `rotation_seconds` | number | `8` | Time between items. `0` = no auto-rotation (manual/remote control) |
+| `transition` | string | `"fade"` | Transition effect: `fade`, `slide`, `none` |
+| `layout` | string | `"hero"` | Display layout: `hero` (full-bleed photo + info strip), `card` (centered card), `split` (photo left, fields right), `photo-only` (no metadata) |
+| `show_fields` | string[] | all | Which fields to display. Ordered. |
+| `hide_fields` | string[] | none | Fields to exclude (applied after show_fields) |
+| `filter` | object | none | Pre-set filter: `{field_label: [values...]}`. Only show matching items. |
+| `show_qr` | boolean | `false` | Show a QR code linking to the item's full detail view |
+| `idle_dim_minutes` | number | `0` | Dim the screen after N minutes of no rotation. `0` = never dim |
+
+**Use cases:**
+- **Museum gallery**: filter by room/gallery, show provenance and date, hero layout, 12-second rotation
+- **Real estate office window**: filter by "Open House" date, show price and specs, QR code to full listing
+- **Living room display**: your watch collection, no filter, fade transition, 8 seconds
+- **Restaurant menu board**: filter by "Available Today", show price and allergens, split layout
+- **Retail signage**: filter by "In Stock", show price and photos, card layout
+
+### Theme Conformance
+
+The theme is **cosmetic guidance, not behavioral instruction**. A runtime MUST accept and apply theme colors and fonts where possible, but MAY override or adapt based on context:
+
+- **Mobile**: layout adapts (single column, larger tap targets), colors preserved
+- **Embed (iframe)**: host page constraints take precedence (width, scroll)
+- **Print/PDF**: ignore dark mode, use high-contrast print-safe values
+- **Accessibility**: user's OS preferences override (high contrast, reduced motion, forced colors, large text)
+- **Kiosk**: renderer optimizes for distance readability (larger fonts, higher contrast)
+
+The principle: **respect the intent, adapt the execution.**
+
 ---
 
 ## `requires` (object, optional)
