@@ -340,6 +340,75 @@ One or more item templates. Each template defines a kind of thing in the catalog
 - Runtimes SHOULD support: `Number`, `Table`, `URL`, `Date`, `Money`, `Boolean`, `GeoLocation`.
 - Runtimes MAY support: `CloudFile`.
 
+### Table Type with Spatial Linking (bbox)
+
+`Table` fields hold structured multi-row data — complications on a watch, components on a circuit board, rooms in a floor plan. Each row can optionally carry a **bounding box** (`bbox`) linking it to a region on one of the item's photos.
+
+```json
+{
+  "label": "Complications",
+  "type": "Table",
+  "sort_order": 80,
+  "target": "Complication",
+  "multi": true,
+  "columns": [
+    {"label": "Complication", "type": "String"},
+    {"label": "Position", "type": "String"},
+    {"label": "Notes", "type": "String"}
+  ]
+}
+```
+
+**Row values with bounding boxes:**
+```json
+[
+  {
+    "Complication": "Chronograph 30-min counter",
+    "Position": "3 o'clock",
+    "Notes": "Valjoux 72 cam-operated",
+    "bbox": {"x": 0.65, "y": 0.35, "w": 0.15, "h": 0.15, "photo_slot": 1}
+  },
+  {
+    "Complication": "Moon phase",
+    "Position": "6 o'clock",
+    "Notes": "122-year cycle",
+    "bbox": {"x": 0.48, "y": 0.72, "w": 0.12, "h": 0.10, "photo_slot": 1}
+  }
+]
+```
+
+**bbox properties** (all coordinates normalized 0..1 relative to the photo):
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `x` | float | Left edge of the bounding box |
+| `y` | float | Top edge of the bounding box |
+| `w` | float | Width of the bounding box |
+| `h` | float | Height of the bounding box |
+| `photo_slot` | integer | Which photo this bbox refers to (1-based slot number) |
+
+**Interactive rendering (screen):**
+- The renderer draws SVG/CSS overlays on the photo for each bbox
+- Hover a photo region → highlight the corresponding Table row
+- Hover a Table row → highlight the bounding box on the photo
+- Zero domain-specific code — the renderer doesn't know what a "complication" is, it just draws rectangles and wires hover events
+
+**Print rendering (PDF/catalog):**
+- Each bbox becomes a numbered callout: a line from the bbox center to a margin label
+- Labels are lettered or numbered: "(a) Chronograph 30-min counter (b) Moon phase"
+- Standard museum catalog / product manual style — feature keys generated automatically from the data
+
+**Kiosk rendering (digital signage):**
+- Auto-zoom: the display cycles through bbox regions, zooming into each one with the label overlaid
+- A guided visual tour of the object — "Ivory paddle", "Bone ulu", "Carved handle" — with smooth pan/zoom transitions
+- Each bbox gets screen time proportional to its size, or equal time if configured
+
+**AI generation:**
+- Claude vision can identify regions of interest in a photo and generate Table rows with bboxes automatically
+- The photo-drop builder creates spatially-linked annotations without any manual drawing
+
+The `bbox` property is optional on any Table row. Rows without bbox are rendered normally (no spatial link). This means the same Table can have some rows linked to photo regions and others that are purely textual.
+
 ### Number Type
 
 `Number` is the workhorse for physical measurements, scores, percentages, and quantities — anything where sorting, comparison, and unit display matter.
