@@ -314,6 +314,7 @@ One or more item templates. Each template defines a kind of thing in the catalog
 | `step` | number | no | — | For Number/Integer: input step increment |
 | `circa` | boolean | no | `false` | For Date type: whether approximate dates are allowed ("c. 1850") |
 | `currency` | string | no | `""` | For Money type: default ISO 4217 currency code (e.g. `"USD"`, `"EUR"`) |
+| `photo_labels` | string[] | no | — | For Photo type (multi): suggested labels for photos (e.g. `["Front", "Back", "Detail"]`) |
 
 ---
 
@@ -473,7 +474,7 @@ At minimum, `lat` and `lng` must be present. `address` and `label` are optional 
 
 If the value omits `currency`, the field def's `currency` default is used. The runtime SHOULD format according to the currency's conventions (e.g. "$4,500.00" for USD, "€4.500,00" for EUR).
 
-### Photo Type with Galleries
+### Photo Type with Galleries and Labels
 
 When `multi: true` is set on a Photo field, the field represents an ordered gallery rather than a single image.
 
@@ -481,7 +482,26 @@ When `multi: true` is set on a Photo field, the field represents an ordered gall
 {"label": "Photos", "type": "Photo", "multi": true, "importance": "required"}
 ```
 
-The runtime stores an ordered list of photos with per-photo captions and a designated hero/primary image. This replaces the pattern of creating multiple single-photo fields ("Photo (Front)", "Photo (Back)").
+The runtime stores an ordered list of photos with per-photo captions and a designated hero/primary image.
+
+### Photo Labels
+
+The `photo_labels` attribute declares suggested labels for photos in a gallery. Each photo can be tagged with a label. Labels are not enforced — you can have 3 "Kitchen" photos and 0 "Backyard" photos.
+
+```json
+{"label": "Photos", "type": "Photo", "multi": true,
+ "photo_labels": ["Street View", "Kitchen", "Living Room", "Master Bedroom", "Backyard"]}
+```
+
+**Use cases:**
+- **Real estate**: Street View ×1, Kitchen ×3, Master Bedroom ×2, Backyard ×1
+- **Vintage scans**: Original Scan, Edited Master, Social Version (versions of the same image)
+- **Museum objects**: Front, Back, Detail, Installation View
+- **Products**: Hero Shot, Lifestyle, Close-up, Packaging
+
+The label is stored on the photo-item edge (the `caption` property). The renderer displays labels as tags or tabs. The health score can track whether expected labels are present.
+
+Labels are suggestions, not slots. An item can have photos with labels not in the template's list, and can have multiple photos with the same label.
 
 ### String Formats
 
