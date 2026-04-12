@@ -101,56 +101,73 @@ All theme fields are optional. The runtime provides sensible defaults for any om
 
 ### Theme Modes
 
-The `mode` field controls the overall presentation strategy. A runtime MUST support `light` and `dark`. Other modes are optional but defined here for interoperability.
+The `mode` field controls the color scheme. A runtime MUST support `light` and `dark`.
 
 | Mode | Description |
 |------|-------------|
 | `light` | Light background, dark text. Default. |
 | `dark` | Dark background, light text. |
-| `kiosk` | Full-screen display mode for digital signage, museum screens, picture frames, and retail displays. See Kiosk Mode below. |
 
-### Kiosk Mode
+---
 
-Kiosk mode transforms a catalog into a digital display. The same data, the same API — just a different presentation optimized for screens that show content without user interaction.
+## Kiosk Mode
 
-```json
-{
-  "theme": {
-    "mode": "kiosk",
-    "accent": "#1a365d",
-    "bg": "#000000",
-    "ink": "#ffffff",
-    "kiosk": {
-      "rotation_seconds": 8,
-      "transition": "fade",
-      "layout": "hero",
-      "show_fields": ["Title", "Brand", "Year", "Condition"],
-      "hide_fields": ["Notes", "Purchase Price"],
-      "filter": {"ObjectType": ["Sculpture"]},
-      "show_qr": true,
-      "idle_dim_minutes": 30
-    }
-  }
-}
+Kiosk mode is a **view modifier**, not a theme. Any catalog, any theme, any filter combination can be viewed in kiosk mode. It transforms the catalog into a full-screen display optimized for screens that show content without user interaction — digital signage, museum screens, picture frames, lobby displays, retail windows.
+
+Kiosk mode is activated by URL parameter, not by theme configuration. This means:
+
+1. The catalog owner sets filters in the normal UI ("only Gallery 3 items")
+2. Checks a "Kiosk Mode" toggle
+3. Copies the resulting URL or embed code
+4. Pastes it into a TV browser, Firestick, WordPress page, Weebly site — anywhere that accepts a URL or iframe
+
+**Not a line of code.**
+
+### URL Parameters
+
+```
+https://mycatalog.example.com?kiosk=true&filter=Location:Gallery+3&rotate=8&layout=hero&qr=true
 ```
 
-| Kiosk Field | Type | Default | Description |
-|-------------|------|---------|-------------|
-| `rotation_seconds` | number | `8` | Time between items. `0` = no auto-rotation (manual/remote control) |
-| `transition` | string | `"fade"` | Transition effect: `fade`, `slide`, `none` |
-| `layout` | string | `"hero"` | Display layout: `hero` (full-bleed photo + info strip), `card` (centered card), `split` (photo left, fields right), `photo-only` (no metadata) |
-| `show_fields` | string[] | all | Which fields to display. Ordered. |
-| `hide_fields` | string[] | none | Fields to exclude (applied after show_fields) |
-| `filter` | object | none | Pre-set filter: `{field_label: [values...]}`. Only show matching items. |
-| `show_qr` | boolean | `false` | Show a QR code linking to the item's full detail view |
-| `idle_dim_minutes` | number | `0` | Dim the screen after N minutes of no rotation. `0` = never dim |
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `kiosk` | boolean | `false` | Enable kiosk mode: hides toolbar, navigation, and edit controls |
+| `rotate` | number | `8` | Seconds between items. `0` = no auto-rotation |
+| `transition` | string | `fade` | Transition effect: `fade`, `slide`, `none` |
+| `layout` | string | `hero` | Display layout (see below) |
+| `fields` | string | all | Comma-separated field labels to show: `fields=Title,Brand,Year` |
+| `filter` | string | none | Filter: `filter=Location:Gallery+3,ObjectType:Sculpture` |
+| `qr` | boolean | `false` | Show QR code linking to item's full detail view |
+| `dim` | number | `0` | Dim screen after N minutes of inactivity. `0` = never |
 
-**Use cases:**
-- **Museum gallery**: filter by room/gallery, show provenance and date, hero layout, 12-second rotation
-- **Real estate office window**: filter by "Open House" date, show price and specs, QR code to full listing
-- **Living room display**: your watch collection, no filter, fade transition, 8 seconds
-- **Restaurant menu board**: filter by "Available Today", show price and allergens, split layout
-- **Retail signage**: filter by "In Stock", show price and photos, card layout
+### Layouts
+
+| Layout | Description |
+|--------|-------------|
+| `hero` | Full-bleed photo with info strip at bottom. Best for visual collections. |
+| `card` | Centered card with photo and fields. Best for mixed content. |
+| `split` | Photo left, structured fields right. Best for data-rich items. |
+| `photo` | Photo only, no metadata. Digital picture frame mode. |
+
+### Embed Code
+
+The embed code is just an iframe of the kiosk URL. The renderer generates it:
+
+```html
+<iframe src="https://mycatalog.example.com?kiosk=true&filter=Location:Gallery+3&rotate=8"
+        width="100%" height="600" style="border:none"></iframe>
+```
+
+This is the same mechanism as embed mode (`?embed=true`). Kiosk mode is embed mode with auto-rotation and full-screen layout. They share the same URL parameter system.
+
+### Use cases
+- **Museum gallery**: filter by room, hero layout, 12-second rotation, QR codes
+- **Real estate office window**: filter by open house date, show price + specs, QR to listing
+- **Living room picture frame**: your collection, no filter, fade transition, 8 seconds
+- **Restaurant menu board**: filter by available today, show price + allergens, split layout
+- **Retail signage**: filter by in stock, show price + photos, card layout
+- **Conference/event**: filter by session track, show speaker + time + room
+- **WordPress/Weebly page**: embed code dropped into any "What's On" page
 
 ### Theme Conformance
 
