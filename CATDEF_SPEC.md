@@ -315,6 +315,7 @@ One or more item templates. Each template defines a kind of thing in the catalog
 | `circa` | boolean | no | `false` | For Date type: whether approximate dates are allowed ("c. 1850") |
 | `currency` | string | no | `""` | For Money type: default ISO 4217 currency code (e.g. `"USD"`, `"EUR"`) |
 | `photo_labels` | string[] | no | — | For Photo type (multi): suggested labels for photos (e.g. `["Front", "Back", "Detail"]`) |
+| `max_items` | integer | no | — | For Photo/CloudFile types: maximum number of linked items. `1` = single photo/file (no strip, no add). `null` = unlimited |
 
 ---
 
@@ -503,6 +504,23 @@ The label is stored on the photo-item edge (the `caption` property). The rendere
 
 Labels are suggestions, not slots. An item can have photos with labels not in the template's list, and can have multiple photos with the same label.
 
+### Limiting Photo and File Counts
+
+The `max_items` attribute on a Photo or CloudFile field controls the maximum number of linked items:
+
+```json
+{"label": "Photos", "type": "Photo", "multi": true, "max_items": 10}
+{"label": "Hero Image", "type": "Photo", "multi": false, "max_items": 1}
+{"label": "Attachments", "type": "CloudFile", "multi": true, "max_items": 5}
+```
+
+When `max_items` is set, the runtime SHOULD:
+- Hide the "add" button when the limit is reached
+- Display the limit in the UI (e.g. "3 of 10 photos")
+- Reject additional uploads with a clear message
+
+When `max_items` is `null` or omitted, no limit is enforced. When `multi: false`, `max_items` defaults to `1`.
+
 ### String Formats
 
 The `format` attribute on a String field enables validation and specialized rendering without creating new field types. Named formats provide well-known validation rules; custom formats use regex.
@@ -612,6 +630,68 @@ Catalog-level feature flags and configuration.
 ```
 
 All settings are optional. Omitted settings use the runtime's defaults (which SHOULD be sensible for a personal catalog).
+
+---
+
+## Extension Namespace
+
+catdef is extensible. Any implementer can add custom fields, settings, or metadata without modifying the spec — and without risk of collision with future spec versions or other implementers.
+
+### Naming Convention
+
+Extension identifiers use the prefix `x.` followed by a reverse-DNS namespace and an identifier:
+
+```
+x.<domain>.<identifier>
+```
+
+Examples:
+```json
+{"label": "x.calendly.com.next_available",    "type": "DateTime"}
+{"label": "x.pxcatalog.com.provenance_score",  "type": "Number"}
+{"label": "x.gameengine.io.lod_level",         "type": "Integer"}
+```
+
+The domain is the extension author's domain. DNS *is* the registry — no central coordination needed. The identifier is freeform within the author's namespace.
+
+### Extension Scope
+
+The `x.` prefix applies anywhere an identifier appears in a catdef:
+
+- **Field labels**: `"label": "x.myapp.com.custom_metric"`
+- **Settings keys**: `"x.myapp.com.sync_interval": 300`
+- **Feature names**: `"features": ["photos", "x.myapp.com.3d_viewer"]`
+- **Widget names**: `"widget": "x.myapp.com.panorama"`
+
+### Import Behavior
+
+Runtimes MUST handle unknown identifiers according to these tiers:
+
+| Identifier | Behavior |
+|------------|----------|
+| Known spec identifier | Validate normally |
+| `x.*` extension | Accept silently. Store as-is. Round-trip without loss. |
+| Unknown, not `x.*` | Accept with a **hard warning** (see below) |
+
+**Hard warning text for non-namespaced unknowns:**
+
+> Unrecognized identifier '{name}' is not defined in catdef v{version} and is not in an extension namespace. Use `x.yourdomain.com.{name}` instead. Non-namespaced extensions **may be rejected** in future spec versions.
+
+The warning MUST be surfaced to the user (not silently swallowed). The data SHOULD still be accepted in the current version to avoid data loss, but implementers are explicitly warned that future spec versions MAY reject non-namespaced unknowns.
+
+### Guidelines for Extension Authors
+
+1. **Use your own domain.** Don't squat on someone else's namespace.
+2. **Document your extensions.** Publish a schema or README at your domain so others can interoperate.
+3. **Expect graceful ignorance.** Runtimes that don't understand your extension will store it but won't render or validate it.
+4. **Don't depend on extensions for core functionality.** A catdef with all `x.*` fields stripped should still be a valid, useful catalog.
+
+### Promotion Path
+
+If an extension proves widely useful, it may be promoted to a first-class spec feature in a future version. At that point:
+- The `x.*` version remains valid (backwards compatibility)
+- The new spec identifier becomes the canonical form
+- Runtimes SHOULD accept both during a transition period
 
 ---
 
