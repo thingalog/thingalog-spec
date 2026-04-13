@@ -211,6 +211,76 @@ All catio operations return errors in a standard shape:
 
 catio version follows semver, independent of catdef version. A catio 1.0 envelope can carry a catdef 1.1 payload — the transport doesn't constrain the content.
 
+## Bundled Transport (ZIP)
+
+Any catio document can be bundled as a ZIP archive alongside its referenced media files. This is the self-contained, portable transport — no network required, no external dependencies.
+
+### Structure
+
+```
+catalog-export.zip
+├── catalog.opencatalog          # The catio JSON document
+├── photos/                      # Referenced photos
+│   ├── watch_001.jpg
+│   ├── watch_002.jpg
+│   └── ...
+└── files/                       # Referenced non-photo files (optional)
+    ├── manual.pdf
+    └── certificate.pdf
+```
+
+### Rules
+
+1. **The JSON document MUST be at the root of the ZIP**, with the appropriate extension (`.openthing`, `.opencatalog`, or `.catdef`). If multiple JSON documents exist at the root, the importer SHOULD use the first `.opencatalog` file, then `.openthing`, then `.catdef`.
+
+2. **Photos MUST be in a `photos/` directory** at the ZIP root. Photo references in the JSON use the filename only (no path prefix): `"filename": "watch_001.jpg"`. The importer resolves `photos/{filename}`.
+
+3. **Non-photo files** (CloudFile, attachments) SHOULD be in a `files/` directory. Same filename-only reference rule.
+
+4. **Photo filenames MUST be unique within the bundle.** If the source system has duplicate filenames across different storage paths, it MUST rename them before bundling (e.g. append a suffix: `watch_001.jpg`, `watch_001_2.jpg`).
+
+5. **Photo references** in the JSON support two forms:
+   - **Filename only** (for bundled transport): `{"filename": "watch_001.jpg", "slot": 1}`
+   - **Filename + URL** (for hybrid transport): `{"filename": "watch_001.jpg", "url": "https://...", "slot": 1}`
+
+   When both are present, the importer SHOULD prefer the local file from the ZIP. The URL is a fallback for cases where the ZIP is incomplete or the file is too large to bundle.
+
+6. **EXIF metadata** embedded in photos SHOULD be preserved. The importer MAY extract photographer, date, and description from EXIF tags (same as direct upload).
+
+7. **File size guidance** (non-normative):
+   - Small catalogs (< 100 photos, < 500 MB): bundle everything.
+   - Large catalogs: consider URL references with optional selective bundling (bundle thumbnails, reference originals by URL).
+   - The ZIP format has no practical size limit, but transfer and storage constraints apply.
+
+### Import Behavior
+
+When importing a ZIP bundle:
+
+1. Parse the JSON document at the root.
+2. For each referenced photo:
+   a. Look in the `photos/` directory of the ZIP.
+   b. If not found and a `url` is present, attempt to download.
+   c. If neither, skip the photo and log a warning (do not fail the import).
+3. Apply standard catio identity and deduplication rules.
+4. Photos are deduplicated by filename within the catalog (same as direct upload).
+
+### Export Behavior
+
+When exporting a catalog as a ZIP bundle:
+
+1. Generate the `.opencatalog` JSON with all items, values, and photo references.
+2. For each photo in the catalog, include the original file in `photos/`.
+3. Include non-photo files in `files/` if applicable.
+4. Photo references in the JSON use filename only (no storage paths or URLs).
+
+### MIME Type
+
+| Format | MIME |
+|--------|------|
+| ZIP bundle | `application/zip` |
+
+The ZIP bundle is identified by its `.zip` extension and the presence of a catio JSON document at the root. There is no special MIME type — it's a standard ZIP file.
+
 ## MIME Types
 
 | Type | MIME |
