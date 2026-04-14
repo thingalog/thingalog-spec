@@ -521,6 +521,106 @@ When `max_items` is set, the runtime SHOULD:
 
 When `max_items` is `null` or omitted, no limit is enforced. When `multi: false`, `max_items` defaults to `1`.
 
+### Photo Transforms (Per-Item Edge Properties)
+
+Each photo-item link carries optional transform properties that describe how the photo should be displayed for that item. These are **per-edge**, not per-photo — the same photo linked to two items can have different crops, rotations, and deskew settings.
+
+```json
+{
+  "filename": "watch_front.jpg",
+  "slot": 1,
+  "is_primary": true,
+  "caption": "Front view",
+  "rotation": 90,
+  "crop_mode": "freeform",
+  "crop_x1": 0.15,
+  "crop_y1": 0.20,
+  "crop_x2": 0.85,
+  "crop_y2": 0.75,
+  "deskew": null
+}
+```
+
+#### Transform Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `slot` | integer | auto | Position in the item's photo gallery (1-based) |
+| `is_primary` | boolean | `false` | Whether this is the hero/card photo. Slot 1 is typically primary |
+| `caption` | string | `""` | Per-slot caption or label tag |
+| `rotation` | integer | `0` | Clockwise rotation in degrees: `0`, `90`, `180`, `270` |
+| `crop_mode` | string | `"none"` | `"none"`, `"freeform"`, or `"deskew"` |
+| `crop_x1` | float | `0` | Freeform crop: left edge (0..1, in original image space) |
+| `crop_y1` | float | `0` | Freeform crop: top edge (0..1) |
+| `crop_x2` | float | `1` | Freeform crop: right edge (0..1) |
+| `crop_y2` | float | `1` | Freeform crop: bottom edge (0..1) |
+| `deskew` | object | `null` | Perspective correction: 4 corner points |
+
+#### Coordinate Space
+
+All crop coordinates are in **original image space** (before rotation). This means:
+
+1. The runtime displays the original (unrotated) image
+2. Applies `crop_x1/y1/x2/y2` to select the region (via CSS `background-size`/`background-position` or equivalent)
+3. Applies `rotation` as a final visual transform (via CSS `transform: rotate()` or equivalent)
+
+This order matters: crop first, rotate second. The coordinates never need to be recalculated when rotation changes.
+
+#### Deskew (Perspective Correction)
+
+When `crop_mode` is `"deskew"`, the `deskew` object contains four corner points defining a quadrilateral on the image. The runtime applies a perspective transform to rectify the region into a rectangle.
+
+```json
+{
+  "crop_mode": "deskew",
+  "rotation": 0,
+  "deskew": {
+    "tl": {"x": 0.15, "y": 0.10},
+    "tr": {"x": 0.85, "y": 0.12},
+    "br": {"x": 0.83, "y": 0.88},
+    "bl": {"x": 0.17, "y": 0.90}
+  }
+}
+```
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `tl` | `{x, y}` | Top-left corner (0..1 normalized, in **rotated** image space) |
+| `tr` | `{x, y}` | Top-right corner |
+| `br` | `{x, y}` | Bottom-right corner |
+| `bl` | `{x, y}` | Bottom-left corner |
+
+**Important:** Deskew coordinates are in **rotated** image space (rotation is applied first, then deskew). This differs from crop coordinates which are in original space. The reason: deskew requires server-side pixel manipulation (CSS cannot do perspective transforms), so the server applies rotation then deskew to generate a corrected thumbnail.
+
+#### Rendering Requirements
+
+| Transform | CSS-capable | Server-side required |
+|-----------|------------|---------------------|
+| Rotation | Yes (`transform: rotate()`) | No |
+| Freeform crop | Yes (`background-size` + `background-position`) | No |
+| Deskew | No | Yes (perspective warp, generates a thumbnail) |
+
+Runtimes MUST support rotation and freeform crop via client-side rendering (instant, no server round-trip). Runtimes SHOULD support deskew via server-side thumbnail generation. Runtimes that don't support deskew SHOULD display the uncorrected image with a visual indicator.
+
+#### Export/Import
+
+Photo transforms MUST be preserved during export and import. Each photo reference in a catio document includes its transform properties:
+
+```json
+{
+  "photos": [
+    {
+      "filename": "scan_001.jpg",
+      "slot": 1,
+      "rotation": 90,
+      "crop_mode": "freeform",
+      "crop_x1": 0.1, "crop_y1": 0.2,
+      "crop_x2": 0.9, "crop_y2": 0.8
+    }
+  ]
+}
+```
+
 ### String Formats
 
 The `format` attribute on a String field enables validation and specialized rendering without creating new field types. Named formats provide well-known validation rules; custom formats use regex.
