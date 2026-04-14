@@ -1,4 +1,4 @@
-# catdef — Specification v1.1
+# catdef — Specification v1.2
 
 ## Overview
 
@@ -29,12 +29,13 @@ catdef is designed to serve the full spectrum of classification needs — from a
 
 ```json
 {
-  "catdef": "1.1",
+  "catdef": "1.2",
 
   "product": { ... },
   "requires": { ... },
   "hints": { ... },
   "templates": [ ... ],
+  "subcats": { ... },
   "settings": { ... }
 }
 ```
@@ -341,6 +342,84 @@ One or more item templates. Each template defines a kind of thing in the catalog
 - Runtimes MUST support: `String`, `Integer`, `RichText`, `Enumerated`, `Photo`.
 - Runtimes SHOULD support: `Number`, `Table`, `URL`, `Date`, `Money`, `Boolean`, `GeoLocation`.
 - Runtimes MAY support: `CloudFile`.
+
+### Subcats (Enriched Enumerated Values)
+
+An Enumerated field's values are simple name strings by default. A **subcat** (sub-catalog) promotes any Enumerated field's value namespace into a mini-catalog with its own field definitions. Each value becomes a record with structured columns.
+
+This is how "Stanley" stops being a bare string and becomes a rich lookup entry: founded 1843, headquartered in New Britain CT, known for hand tools.
+
+**Subcat definition** lives at the top level alongside templates, keyed by the Enumerated field's `target` label:
+
+```json
+{
+  "subcats": {
+    "Brand": {
+      "field_defs": [
+        {"label": "Founded", "type": "Integer", "sort_order": 10},
+        {"label": "Country", "type": "String", "sort_order": 20},
+        {"label": "Specialty", "type": "String", "sort_order": 30},
+        {"label": "Notes", "type": "RichText", "sort_order": 40}
+      ]
+    },
+    "Condition": {
+      "field_defs": [
+        {"label": "Description", "type": "String", "sort_order": 10},
+        {"label": "Grade", "type": "String", "sort_order": 20}
+      ]
+    }
+  }
+}
+```
+
+**Value data** follows the same pattern as item fields. Each Value node gets child Field nodes matching the subcat's field_defs:
+
+```json
+{
+  "name": "Stanley",
+  "label": "Brand",
+  "fields": [
+    {"label": "Founded", "value": 1843},
+    {"label": "Country", "value": "USA"},
+    {"label": "Specialty", "value": "Hand tools"},
+    {"label": "Notes", "value": "Stanley Works, founded in New Britain, Connecticut."}
+  ]
+}
+```
+
+**Key properties:**
+
+| Property | Description |
+|----------|-------------|
+| `subcats` | Top-level object. Keys are Enumerated `target` labels |
+| `field_defs` | Array of field definitions (same schema as template field_defs, minus Enumerated/Photo types) |
+
+**Architecture:**
+- Subcat field_defs use the same schema as template field_defs — same types, same sort_order, same validation attributes
+- Value child Field nodes use the same `:HAS` relationship and same node structure as Item child Fields
+- A subcat's field_defs can include scalar types: String, Integer, Number, Date, Money, RichText, Boolean, URL
+- Subcats do NOT support nested Enumerated or Photo fields (no subcats-of-subcats, no images on values — yet)
+- Adding a subcat field_def propagates empty Field nodes to all existing Values of that label
+
+**Renderer behavior:**
+- A "Lookups" tab (alongside Items, Photos) lists all Enumerated value namespaces
+- Clicking a namespace shows all values in a table with subcat columns
+- Value detail view shows subcat fields, editable in write mode
+- Enumerated field labels are clickable links to the Lookups tab
+
+**AI generation:**
+- When generating sample data, AI should produce subcat definitions and value data for every Enumerated field
+- 2-4 columns per subcat is typical — enough to be useful, not overwhelming
+
+**Relationship to Table type:**
+- **Table** = per-item structured rows (Complications on *this specific watch*)
+- **Subcat** = shared value enrichment (what "Omega" means across *all* watches)
+- Both use child Field nodes with the same schema; the difference is scope
+
+**Conformance:**
+- Level 1 runtimes MAY ignore subcats (values still work as plain strings)
+- Level 2+ runtimes SHOULD render subcat fields in value detail views
+- Level 3+ runtimes MUST support subcat CRUD
 
 ### Table Type with Spatial Linking (bbox)
 
@@ -799,7 +878,7 @@ If an extension proves widely useful, it may be promoted to a first-class spec f
 
 ```json
 {
-  "catdef": "1.1",
+  "catdef": "1.2",
 
   "product": {
     "name": "Scott's Watch Collection",
@@ -859,6 +938,31 @@ If an extension proves widely useful, it may be promoted to a first-class spec f
     }
   ],
 
+  "subcats": {
+    "Brand": {
+      "field_defs": [
+        {"label": "Founded", "type": "Integer", "sort_order": 10},
+        {"label": "Country", "type": "String", "sort_order": 20},
+        {"label": "Specialty", "type": "String", "sort_order": 30},
+        {"label": "Active", "type": "Boolean", "sort_order": 40}
+      ]
+    },
+    "Movement": {
+      "field_defs": [
+        {"label": "Type", "type": "String", "sort_order": 10},
+        {"label": "Jewels", "type": "Integer", "sort_order": 20},
+        {"label": "Frequency", "type": "String", "sort_order": 30}
+      ]
+    },
+    "Dealer": {
+      "field_defs": [
+        {"label": "Location", "type": "String", "sort_order": 10},
+        {"label": "Website", "type": "URL", "sort_order": 20},
+        {"label": "Notes", "type": "String", "sort_order": 30}
+      ]
+    }
+  },
+
   "settings": {
     "public": true,
     "embed": {"enabled": true, "powered_by": true},
@@ -878,7 +982,7 @@ If an extension proves widely useful, it may be promoted to a first-class spec f
 
 ```json
 {
-  "catdef": "1.1",
+  "catdef": "1.2",
 
   "product": {
     "name": "Artisan Ceramics Shop",
@@ -927,7 +1031,7 @@ If an extension proves widely useful, it may be promoted to a first-class spec f
 
 ```json
 {
-  "catdef": "1.1",
+  "catdef": "1.2",
 
   "product": {
     "name": "Pacific Northwest Heritage Collection",
