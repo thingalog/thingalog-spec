@@ -1,0 +1,31 @@
+{
+  "catdef": "1.1",
+  "product": {"name": "Bad deskew", "slug": "bad-deskew"},
+  "templates": [
+    {
+      "name": "Artwork",
+      "field_defs": [
+        {"label": "Title", "type": "String", "sort_order": 10},
+        {"label": "Photos", "type": "Photo", "sort_order": 20, "multi": true}
+      ]
+    }
+  ],
+  "data": {
+    "items": [
+      {
+        "template": "Artwork",
+        "fields": {"Title": "Oops"},
+        "photos": [
+          {
+            "filename": "a.jpg", "slot": 1, "crop_mode": "deskew",
+            "deskew": {
+              "tl": {"x": 0.05, "y": 0.10},
+              "tr": {"x": 0.95, "y": 0.12},
+              "br": {"x": 0.93, "y": 0.88}
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
