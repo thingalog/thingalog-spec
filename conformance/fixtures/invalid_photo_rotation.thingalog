@@ -1,0 +1,22 @@
+{
+  "catdef": "1.1",
+  "product": {"name": "Bad rotation", "slug": "bad-rotation"},
+  "templates": [
+    {
+      "name": "Artwork",
+      "field_defs": [
+        {"label": "Title", "type": "String", "sort_order": 10},
+        {"label": "Photos", "type": "Photo", "sort_order": 20, "multi": true}
+      ]
+    }
+  ],
+  "data": {
+    "items": [
+      {
+        "template": "Artwork",
+        "fields": {"Title": "Oops"},
+        "photos": [{"filename": "a.jpg", "slot": 1, "rotation": 45}]
+      }
+    ]
+  }
+}

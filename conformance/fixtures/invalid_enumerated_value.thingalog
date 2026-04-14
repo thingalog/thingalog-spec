@@ -1,0 +1,19 @@
+{
+  "catdef": "1.1",
+  "product": {"name": "Bad enum", "slug": "bad-enum"},
+  "templates": [
+    {
+      "name": "Watch",
+      "field_defs": [
+        {"label": "Title", "type": "String", "sort_order": 10},
+        {"label": "Brand", "type": "Enumerated", "sort_order": 20, "target": "Brand"}
+      ]
+    }
+  ],
+  "data": {
+    "values": {"Brand": ["Omega", "Rolex", "Tudor"]},
+    "items": [
+      {"template": "Watch", "fields": {"Title": "A", "Brand": "Casio"}}
+    ]
+  }
+}
