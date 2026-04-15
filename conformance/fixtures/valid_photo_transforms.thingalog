@@ -1,0 +1,49 @@
+{
+  "catdef": "1.1",
+  "product": {"name": "Transforms", "slug": "transforms"},
+  "templates": [
+    {
+      "name": "Artwork",
+      "field_defs": [
+        {"label": "Title", "type": "String", "sort_order": 10, "required": true},
+        {"label": "Photos", "type": "Photo", "sort_order": 20, "multi": true}
+      ]
+    }
+  ],
+  "data": {
+    "items": [
+      {
+        "template": "Artwork",
+        "fields": {"Title": "Rotated"},
+        "photos": [
+          {"filename": "a.jpg", "slot": 1, "is_primary": true, "rotation": 90}
+        ]
+      },
+      {
+        "template": "Artwork",
+        "fields": {"Title": "Freeform crop"},
+        "photos": [
+          {
+            "filename": "b.jpg", "slot": 1, "crop_mode": "freeform",
+            "crop_x1": 0.1, "crop_y1": 0.2, "crop_x2": 0.9, "crop_y2": 0.8
+          }
+        ]
+      },
+      {
+        "template": "Artwork",
+        "fields": {"Title": "Deskew"},
+        "photos": [
+          {
+            "filename": "c.jpg", "slot": 1, "crop_mode": "deskew",
+            "deskew": {
+              "tl": {"x": 0.05, "y": 0.10},
+              "tr": {"x": 0.95, "y": 0.12},
+              "br": {"x": 0.93, "y": 0.88},
+              "bl": {"x": 0.07, "y": 0.90}
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

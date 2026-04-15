@@ -1,0 +1,18 @@
+{
+  "catdef": "1.1",
+  "product": {"name": "Bad int", "slug": "bad-int"},
+  "templates": [
+    {
+      "name": "Watch",
+      "field_defs": [
+        {"label": "Title", "type": "String", "sort_order": 10},
+        {"label": "Year",  "type": "Integer", "sort_order": 20}
+      ]
+    }
+  ],
+  "data": {
+    "items": [
+      {"template": "Watch", "fields": {"Title": "A", "Year": "nineteen sixty-nine"}}
+    ]
+  }
+}
