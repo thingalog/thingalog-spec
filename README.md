@@ -13,9 +13,11 @@ A single `.thingalog` file contains everything: the schema (templates, field def
 
 | Path | Description |
 |------|-------------|
-| [CATDEF_SPEC.md](CATDEF_SPEC.md) | The catdef v1.1 specification — field types, widgets, conformance levels |
+| [CATDEF_SPEC.md](CATDEF_SPEC.md) | The catdef v1.3 specification — field types, subcats, views, inheritance, conformance levels |
+| [CATIO_SPEC.md](CATIO_SPEC.md) | The CATIO bundled-transport specification — `.opencatalog` ZIP format |
 | [samples/](samples/) | Sample `.thingalog` files you can open in any conformant renderer |
-| [conformance/](conformance/) | The catdef Conformance Test Suite — 55 tests |
+| [conformance/](conformance/) | The catdef Conformance Test Suite — 98 tests |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | How to propose changes to the standard |
 
 ## File format
 
@@ -23,10 +25,14 @@ MIME type: `application/vnd.catdef+json`
 
 ```json
 {
-  "catdef": "1.1",
+  "catdef": "1.3",
   "product": { "name": "My Collection", "slug": "mycollection", ... },
-  "requires": { "renderer": ">=1.0", "features": ["photos"], ... },
+  "inherits_from": "optional_model_slug",
+  "views": { "primary_axis": "thing", "modes": ["grid"], "default": "grid" },
   "templates": [{ "name": "Item", "field_defs": [...] }],
+  "subcats": { "Brand": { "field_defs": [...], "values": {...} } },
+  "themes": { ... },
+  "embed": { ... },
   "data": { "values": {...}, "items": [...] }
 }
 ```
@@ -37,7 +43,17 @@ MIME type: `application/vnd.catdef+json`
 
 `String` `Integer` `Number` `RichText` `Enumerated` `Photo` `Table` `CloudFile` `URL` `Date` `Money` `Boolean` `GeoLocation`
 
-Plus field-def attributes: `unique`, `default`, `format` (isbn, vin, sku, etc.), `unit`, `precision`, `min`/`max`, `circa`, `currency`.
+Plus field-def attributes: `unique`, `default`, `format` (isbn, vin, sku, etc.), `unit`, `precision`, `min`/`max`, `circa`, `currency`, `range`, `scorable`, `primary`.
+
+## v1.3 highlights
+
+- **Subcats** — enriched Enumerated values with their own field_defs. Stanley (the brand) has Founded/Country/Specialty/Logo. Artists have portraits. Venues have addresses.
+- **Inheritance** — `inherits_from` enables partner/model catalogs. A watch-catalog platform publishes `watchomatic_model`; customers create catalogs that inherit schema, themes, and seed data.
+- **Views** — `primary_axis` (thing/date/place) tells renderers the dominant organizing principle. A concert calendar declares `"primary_axis": "date"`, gets calendar-first rendering for free.
+- **Range types** — `Number`/`Money`/`Date` with `range: true` for case diameter ranges, price ranges, exhibition dates.
+- **Context-aware rendering** — `scorable` fields enable geo/time-weighted sorting. Same CATIO file renders differently on kiosks in different locations.
+- **Embed declaration** — catalogs can be embedded in any website as iframes with declared defaults.
+- **About page** — expanded `product` object (phone, website, address, hours, social, sections) turns every catalog into a proper web destination.
 
 ## Conformance levels
 
