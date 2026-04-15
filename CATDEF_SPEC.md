@@ -1,4 +1,4 @@
-# catdef — Specification v1.2
+# catdef — Specification v1.3
 
 ## Overview
 
@@ -29,13 +29,17 @@ catdef is designed to serve the full spectrum of classification needs — from a
 
 ```json
 {
-  "catdef": "1.2",
+  "catdef": "1.3",
 
   "product": { ... },
+  "inherits_from": "...",
   "requires": { ... },
   "hints": { ... },
+  "views": { ... },
   "templates": [ ... ],
   "subcats": { ... },
+  "themes": { ... },
+  "embed": { ... },
   "settings": { ... }
 }
 ```
@@ -56,10 +60,27 @@ The identity and branding of the catalog application.
     "slug": "scottswatches",
     "domain": "scottswatches.example.com",
     "tagline": "Vintage timepieces, documented",
-    "description": "A curated catalog of vintage mechanical watches collected over 30 years.",
+    "description": "<p>A curated catalog of vintage mechanical watches...</p>",
     "contact_email": "scott@example.com",
+    "phone": "+1-555-0100",
+    "website": "https://scottswatches.com",
+    "address": "Vancouver, BC, Canada",
+    "hours": "By appointment",
     "owner": "Scott Welch",
     "logo_url": "",
+    "social": {
+      "instagram": "@scottswatches",
+      "twitter": "@scottswatches",
+      "facebook": "scottswatches",
+      "youtube": "@scottswatches",
+      "tiktok": "@scottswatches",
+      "bluesky": "scottswatches.bsky.social"
+    },
+    "sections": [
+      {"title": "About", "content": "<p>...rich text...</p>"},
+      {"title": "Provenance", "content": "<p>...</p>"},
+      {"title": "Inquiries", "content": "<p>Contact me at...</p>"}
+    ],
     "theme": "Midnight"
   }
 }
@@ -71,11 +92,19 @@ The identity and branding of the catalog application.
 | `slug` | string | yes | URL-safe identifier. Used for subdomain routing by platforms that support it |
 | `domain` | string | no | Full custom domain if applicable |
 | `tagline` | string | no | Short subtitle, displayed in header |
-| `description` | string | no | Longer description, used in meta tags and AI context |
+| `description` | string (RichText) | no | Longer description, used in meta tags, About page, and AI context |
 | `contact_email` | string | no | Owner's contact email |
+| `phone` | string | no | E.164 or local format phone number |
+| `website` | string | no | External website URL |
+| `address` | string | no | Street address or region. May render as map link |
+| `hours` | string | no | Opening hours or availability description |
 | `owner` | string | no | Display name of the catalog owner |
 | `logo_url` | string | no | URL to a logo image |
+| `social` | object | no | Social handles, keyed by platform. Renderer shows icon links |
+| `sections` | array | no | Free-form content blocks for the About page. Each is `{title, content}` with RichText content |
 | `theme` | string or object | no | Either a theme name (resolved by the runtime) or an inline theme object |
+
+The extended product fields (`phone`, `website`, `address`, `hours`, `social`, `sections`) power an **About page** — for many catalog owners, their Thingalog catalog is their only online presence. Level 2+ runtimes SHOULD render an "About" link that opens these fields as a page or drawer.
 
 ### Inline Theme Object
 
@@ -184,6 +213,39 @@ The principle: **respect the intent, adapt the execution.**
 
 ---
 
+## `inherits_from` (string, optional)
+
+Declares that this catalog is a child of a parent **model catalog**. The parent provides the base field_defs, subcats, themes, and views; the child can customize freely.
+
+```json
+{
+  "inherits_from": "watchomatic_model"
+}
+```
+
+The parent reference is either:
+- A slug within the same platform (`"watchomatic_model"`)
+- A fully qualified URL to a published catdef (`"https://watchomatic.com/models/collector.catdef"`)
+
+**Inheritance semantics:**
+- At catalog creation, the parent's `templates`, `subcats`, and `themes` are cloned into the child.
+- The child may add, rename, or remove fields without affecting the parent.
+- Optional live link: child can subscribe to parent updates and receive "new fields available" notifications.
+- Parent-scoped themes, views, and CSS are available only to catalogs that inherit from that parent (see `themes.scope`).
+
+**Use cases:**
+- **Partner white-label:** Partner provides the perfect `watchomatic_model`; every customer's catalog inherits it. Zero AI wait at creation time, consistent quality, interoperable data across the partner's customer base.
+- **Marketplace templates:** A curator publishes "Vintage Watch Collector" as a shareable model; any user can create a catalog that inherits from it.
+- **Organizational standards:** A museum consortium publishes a canonical accession template; member institutions inherit it.
+
+**URL invocation:**
+Partners typically send customers to the Thingalog builder with:
+`https://builder.thingalog.com/?inherits_from=watchomatic_model`
+
+The builder skips the "Describe It" step and creates a catalog pre-populated with the inherited schema.
+
+---
+
 ## `requires` (object, optional)
 
 Declares the capabilities the catdef needs from the runtime. Used for compatibility checking and graceful degradation.
@@ -246,6 +308,52 @@ Non-binding guidance to help the runtime choose infrastructure. The runtime MAY 
 | ≤500 items, photos | Lightweight server (SQLite + file storage) |
 | ≤5000 items, heavy media | Full server (Postgres/Neo4j + object storage) |
 | >5000 items or realtime | Scaled infrastructure |
+
+---
+
+## `views` (object, optional)
+
+Declares how this catalog prefers to be displayed. A catdef isn't just a schema — it's also a hint about presentation. A concert calendar wants a date-forward view; a real estate catalog wants a map; a watch collection wants a grid. Same engine, different lens.
+
+```json
+{
+  "views": {
+    "primary_axis": "date",
+    "modes": ["grid", "calendar", "table", "kiosk"],
+    "default": "calendar",
+    "default_icon": "🎸",
+    "kiosk_layout": "tonight",
+    "mode_config": {
+      "calendar": {
+        "group_by": "week",
+        "primary_field": "Show Date"
+      }
+    }
+  }
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `primary_axis` | string | `"thing"` (default), `"date"`, `"place"`. Determines the dominant organizing principle |
+| `modes` | array | Which view modes this catalog supports. Renderer hides unavailable modes |
+| `default` | string | Mode to load on first open (and for disconnected kiosks) |
+| `default_icon` | string | Emoji or icon hint used when no logo is set. Critical for kiosk/Thingstick displays |
+| `kiosk_layout` | string | Layout name for kiosk mode. Interpreted by theme |
+| `mode_config` | object | Per-mode configuration. Keys are mode names |
+
+**Primary axis:**
+- `"thing"` — classic thing-forward catalog (watches, artifacts, products). Default if omitted.
+- `"date"` — calendar / timeline / event-stream. Items have a primary Date field.
+- `"place"` — map / atlas / location-first. Items have a primary GeoLocation field.
+
+**Mode list:**
+- `grid`, `table`, `calendar`, `map`, `kiosk`, `poster`, `timeline`, `gallery` — runtime-dependent
+
+**Default icon note (kiosks):**
+Thingstick and other disconnected displays may boot before network is reliable. `default_icon` is shown during pairing and while loading. Pick something distinctive.
+
+**Partner-scoped views** can be declared here if scoped to an `inherits_from` tree. See `themes.scope`.
 
 ---
 
@@ -317,6 +425,9 @@ One or more item templates. Each template defines a kind of thing in the catalog
 | `currency` | string | no | `""` | For Money type: default ISO 4217 currency code (e.g. `"USD"`, `"EUR"`) |
 | `photo_labels` | string[] | no | — | For Photo type (multi): suggested labels for photos (e.g. `["Front", "Back", "Detail"]`) |
 | `max_items` | integer | no | — | For Photo/CloudFile types: maximum number of linked items. `1` = single photo/file (no strip, no add). `null` = unlimited |
+| `range` | boolean | no | `false` | For Number/Money/Date types: accept a low/high pair instead of a single value. See Range Modifier |
+| `scorable` | string | no | — | Hint for context-aware sorting. Values: `"distance"` (GeoLocation), `"recency"` (Date), `"imminence"` (Date), `"popularity"` (any). See Context-Aware Rendering |
+| `primary` | boolean | no | `false` | Marks the field as the primary axis for this template. Used with `views.primary_axis` to auto-pick date/geo fields |
 
 ---
 
@@ -392,24 +503,91 @@ This is how "Stanley" stops being a bare string and becomes a rich lookup entry:
 | Property | Description |
 |----------|-------------|
 | `subcats` | Top-level object. Keys are Enumerated `target` labels |
-| `field_defs` | Array of field definitions (same schema as template field_defs, minus Enumerated/Photo types) |
+| `field_defs` | Array of field definitions (same schema as template field_defs) |
+| `values` | (optional) Seed values for the subcat, keyed by value name. See Seed Values below |
 
 **Architecture:**
 - Subcat field_defs use the same schema as template field_defs — same types, same sort_order, same validation attributes
 - Value child Field nodes use the same `:HAS` relationship and same node structure as Item child Fields
-- A subcat's field_defs can include scalar types: String, Integer, Number, Date, Money, RichText, Boolean, URL
-- Subcats do NOT support nested Enumerated or Photo fields (no subcats-of-subcats, no images on values — yet)
+- A subcat's field_defs can include all scalar types (String, Integer, Number, Date, Money, RichText, Boolean, URL), plus `Photo` and `Enumerated` (both with conformance caveats — see below)
 - Adding a subcat field_def propagates empty Field nodes to all existing Values of that label
 
+**Photo fields in subcats:**
+Subcats MAY declare Photo fields. A Brand subcat can have a logo. An Artist subcat can have a portrait. A Venue subcat can have an exterior photo.
+
+```json
+"subcats": {
+  "Brand": {
+    "field_defs": [
+      {"label": "Logo", "type": "Photo", "sort_order": 10},
+      {"label": "Founded", "type": "Integer", "sort_order": 20}
+    ]
+  }
+}
+```
+
+The Sub-Catalogs tab can render values as cards with their images — a visual directory of brands, artists, places.
+
+**Enumerated fields in subcats (recursive graphs):**
+Subcats MAY declare Enumerated fields, which create edges between values. This allows arbitrary graph hierarchies: Twin Otter → de Havilland → Airplane Manufacturers → Vehicle Manufacturers.
+
+```json
+"subcats": {
+  "Aircraft Model": {
+    "field_defs": [
+      {"label": "Manufacturer", "type": "Enumerated", "target": "Manufacturer", "sort_order": 10}
+    ]
+  },
+  "Manufacturer": {
+    "field_defs": [
+      {"label": "Category", "type": "Enumerated", "target": "Category", "sort_order": 10}
+    ]
+  }
+}
+```
+
+**⚠️ Implementation note:** Recursive subcats are a spec feature — the data model supports arbitrary depth. However, runtimes are NOT required to support them. A runtime that supports recursive subcats effectively becomes a graph database editor, which is a different product category than a catalog tool. The spec permits it so that specialized graph-tagging applications (PXMemo-style photo collections, knowledge bases, taxonomies) can use catdef as transport. A general-purpose catalog tool should think carefully before enabling them.
+
+Cycle handling: if a runtime supports recursive subcats, it MUST detect cycles and cap render depth (typically 3-4 levels) to prevent infinite loops in value detail views.
+
+**Seed Values:**
+Subcats may declare a `values` object that pre-populates the catalog with seeded value data. Keys are value names; values are `{field_label: value}` pairs:
+
+```json
+"subcats": {
+  "Brand": {
+    "field_defs": [
+      {"label": "Founded", "type": "Integer"},
+      {"label": "Country", "type": "String"}
+    ],
+    "values": {
+      "Stanley": {"Founded": 1843, "Country": "USA"},
+      "DeWalt": {"Founded": 1923, "Country": "USA"},
+      "Milwaukee": {"Founded": 1924, "Country": "USA"}
+    }
+  }
+}
+```
+
+On import:
+1. Subcat field_defs are created first
+2. Named values are created (via `find_or_create_value`)
+3. Each value's fields are populated from the seed data
+4. Photo fields referenced by filename pull from the CATIO `photos/` bundle
+
+Seed values carry in CATIO bundles, enabling partners to ship curated subcat libraries (common brands, common conditions, common materials) that customers get automatically when they inherit from a model catalog.
+
 **Renderer behavior:**
-- A "Lookups" tab (alongside Items, Photos) lists all Enumerated value namespaces
+- A "Sub-Catalogs" tab (alongside Items, Photos) lists all Enumerated value namespaces
 - Clicking a namespace shows all values in a table with subcat columns
 - Value detail view shows subcat fields, editable in write mode
-- Enumerated field labels are clickable links to the Lookups tab
+- Enumerated field labels are clickable links to the Sub-Catalogs tab
+- If the subcat has a Photo field, the tab may offer a grid view with images
 
 **AI generation:**
-- When generating sample data, AI should produce subcat definitions and value data for every Enumerated field
+- When generating sample data or templates, AI should produce subcat definitions and seed values for every Enumerated field
 - 2-4 columns per subcat is typical — enough to be useful, not overwhelming
+- Including `photo_query` hints per seeded value allows runtimes to auto-fetch stock photos
 
 **Relationship to Table type:**
 - **Table** = per-item structured rows (Complications on *this specific watch*)
@@ -553,6 +731,67 @@ At minimum, `lat` and `lng` must be present. `address` and `label` are optional 
 ```
 
 If the value omits `currency`, the field def's `currency` default is used. The runtime SHOULD format according to the currency's conventions (e.g. "$4,500.00" for USD, "€4.500,00" for EUR).
+
+### Range Modifier
+
+A field definition MAY set `range: true` on `Number`, `Money`, or `Date` types to accept a pair of values — a low/high, min/max, or start/end — instead of a single scalar.
+
+```json
+{"label": "Case Diameter", "type": "Number", "range": true, "unit": "mm"}
+{"label": "Price Range", "type": "Money", "range": true, "currency": "USD"}
+{"label": "Exhibition Dates", "type": "Date", "range": true}
+```
+
+**Value shapes:**
+
+- `Number` with `range: true` → `{"min": 42, "max": 45}`
+- `Money` with `range: true` → `{"low": {"amount": 500, "currency": "USD"}, "high": {"amount": 1500, "currency": "USD"}}`
+- `Date` with `range: true` → `{"start": "2024-06-01", "end": "2024-06-05"}`
+
+**Rendering:**
+- Two adjacent input widgets (e.g. "From" / "To")
+- Display as "42–45 mm", "$500–$1,500", "Jun 1–5, 2024"
+- Filter/search match if the search value falls within the range
+
+**Sort semantics:**
+- Sort by the low end by default
+- Runtimes MAY offer "sort by high" or "sort by midpoint" as options
+
+Ranges do not modify other type attributes. A `Number` with `range: true, unit: "mm", precision: 1` gives you a diameter range in millimeters with one decimal.
+
+### Context-Aware Rendering
+
+Fields may declare a `scorable` attribute that tells the runtime how to weight them when the viewing context is known. The same CATIO bundle can render very differently depending on where, when, and to whom it's displayed.
+
+```json
+{"label": "Venue", "type": "Enumerated", "target": "Venue", "scorable": "distance"}
+{"label": "Show Date", "type": "Date", "scorable": "imminence"}
+{"label": "Popularity", "type": "Integer", "scorable": "popularity"}
+```
+
+**Scorable values:**
+
+| Value | Applicable to | Meaning |
+|-------|---------------|---------|
+| `"distance"` | GeoLocation (or Enumerated linking to a Venue subcat with geo fields) | Weight items closer to viewer's location higher |
+| `"recency"` | Date | Weight newer items higher |
+| `"imminence"` | Date | Weight upcoming items higher ("tonight" > "next week" > "last month") |
+| `"popularity"` | Integer, Number | Higher values weight higher |
+| `"relevance"` | any | User-scored relevance signal (likes, views) |
+
+**Runtime behavior:**
+- A renderer that knows the viewer's geolocation, local time, or profile MAY use scorable fields to re-sort items
+- A concert calendar in Brooklyn shows L'Amour shows first; in LA it shows Whisky a Go Go shows first
+- A Thingstick in a hotel lobby sorts a restaurant guide by walking distance; a mobile app does the same for the user's current location
+- The same data, different orderings — context as a rendering dimension
+
+**Signals available to the runtime:**
+- Device geolocation (if granted)
+- Current time in the device's timezone
+- Viewer identity (if authenticated)
+- Kiosk location (set at pairing time)
+
+Scorable fields are hints, not guarantees. A renderer without geolocation simply falls back to the catalog's default sort.
 
 ### Photo Type with Galleries and Labels
 
@@ -769,6 +1008,100 @@ Widgets control how a field is presented in the UI. The runtime selects a defaul
 
 ---
 
+## `themes` (object, optional)
+
+Named theme packs that can be applied to the catalog. Themes are a presentation layer only — they never modify data.
+
+```json
+{
+  "themes": {
+    "midnight": {
+      "accent": "#1a365d",
+      "bg": "#0d1117",
+      "ink": "#e6edf3",
+      "mode": "dark"
+    },
+    "watchomatic_vintage": {
+      "accent": "#c9a04e",
+      "bg": "#1a1208",
+      "ink": "#e8d9b5",
+      "mode": "dark",
+      "font_heading": "'Playfair Display', serif",
+      "scope": "inherits_from:watchomatic_model"
+    }
+  }
+}
+```
+
+**Theme properties (non-exhaustive — runtimes pass unknown keys to CSS custom properties):**
+
+| Field | Description |
+|-------|-------------|
+| `accent` | Primary color for interactive elements |
+| `bg` | Background color |
+| `ink` | Primary text color |
+| `mode` | `"light"` or `"dark"` — hint for surrounding UI |
+| `font_heading`, `font_body` | CSS font-family strings |
+| `css` | Optional full CSS override block |
+| `scope` | Inheritance scope (see below) |
+
+**Partner-scoped themes:**
+
+A theme's `scope` attribute restricts its visibility to catalogs matching the scope expression:
+
+- `"scope": "inherits_from:watchomatic_model"` — only catalogs that inherit from `watchomatic_model` can apply this theme
+- `"scope": "tier:pro"` — only catalogs on the Pro tier
+- `"scope": "public"` (default) — available to any catalog
+
+Partner-scoped themes, views, and CSS are the partner's value-add — their customers get a curated visual experience that non-partner customers cannot access. This creates healthy ecosystem dynamics: partners compete on experience quality; customer data remains portable via CATIO.
+
+---
+
+## `embed` (object, optional)
+
+Declares how this catalog behaves when embedded in another site via iframe or widget.
+
+```json
+{
+  "embed": {
+    "enabled": true,
+    "allowed_domains": ["*"],
+    "default_view": "grid",
+    "default_size": {"width": "100%", "height": "600"},
+    "attribution": "required",
+    "hide_header": true,
+    "hide_sign_in": true
+  }
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `enabled` | boolean | Whether embedding is permitted |
+| `allowed_domains` | string[] | Parent domains permitted to embed. `["*"]` = any site |
+| `default_view` | string | View mode to load when embedded |
+| `default_size` | object | Suggested iframe size |
+| `attribution` | string | `"required"` (show "Powered by") or `"none"` (paid tiers only) |
+| `hide_header` | boolean | Hide the catalog header in embed mode |
+| `hide_sign_in` | boolean | Hide the sign-in button |
+
+**Embed URL pattern:**
+Runtimes invoke embed mode via `?embed=true` and MAY accept additional parameters:
+- `?embed=true&view=calendar` — override view mode
+- `?embed=true&filter=Brand:Stanley` — pre-apply filter
+- `?embed=true&theme=watchomatic_vintage` — apply named theme
+
+**Copy-paste snippet** produced by a conforming runtime's "Get embed code" feature:
+```html
+<iframe src="https://scotts-tools.thingalog.app/?embed=true&view=grid"
+        width="100%" height="600" frameborder="0"
+        style="border:0;border-radius:12px;"
+        loading="lazy"
+        allow="fullscreen"></iframe>
+```
+
+---
+
 ## `settings` (object, optional)
 
 Catalog-level feature flags and configuration.
@@ -878,7 +1211,7 @@ If an extension proves widely useful, it may be promoted to a first-class spec f
 
 ```json
 {
-  "catdef": "1.2",
+  "catdef": "1.3",
 
   "product": {
     "name": "Scott's Watch Collection",
@@ -982,7 +1315,7 @@ If an extension proves widely useful, it may be promoted to a first-class spec f
 
 ```json
 {
-  "catdef": "1.2",
+  "catdef": "1.3",
 
   "product": {
     "name": "Artisan Ceramics Shop",
@@ -1031,7 +1364,7 @@ If an extension proves widely useful, it may be promoted to a first-class spec f
 
 ```json
 {
-  "catdef": "1.2",
+  "catdef": "1.3",
 
   "product": {
     "name": "Pacific Northwest Heritage Collection",
@@ -1081,6 +1414,97 @@ If an extension proves widely useful, it may be promoted to a first-class spec f
 
 ---
 
+## Complete Example: Concert Calendar (Date-forward)
+
+This example showcases v1.3 features: date-forward primary axis, partner inheritance, subcat images (band logos, venue exteriors), About page, scorable fields for geo-weighted kiosks.
+
+```json
+{
+  "catdef": "1.3",
+
+  "inherits_from": "venuepartner_model",
+
+  "product": {
+    "name": "L'Amour Brooklyn",
+    "slug": "lamour",
+    "tagline": "Rock Capitol of Brooklyn",
+    "description": "<p>Since 1981. Live rock every night.</p>",
+    "website": "https://lamourbrooklyn.com",
+    "address": "1545 62nd St, Brooklyn, NY",
+    "hours": "Doors 8pm, every night",
+    "phone": "+1-718-232-1616",
+    "social": {"instagram": "@lamourbrooklyn"},
+    "sections": [
+      {"title": "About", "content": "<p>The Rock Capitol of Brooklyn since 1981...</p>"},
+      {"title": "Tickets", "content": "<p>Box office opens at 6pm...</p>"}
+    ]
+  },
+
+  "views": {
+    "primary_axis": "date",
+    "modes": ["calendar", "grid", "poster", "kiosk"],
+    "default": "calendar",
+    "default_icon": "🎸",
+    "kiosk_layout": "tonight"
+  },
+
+  "templates": [
+    {
+      "name": "Show",
+      "icon": "🎸",
+      "field_defs": [
+        {"label": "Show Date", "type": "Date", "sort_order": 10, "required": true, "primary": true, "scorable": "imminence"},
+        {"label": "Headliner", "type": "Enumerated", "target": "Band", "sort_order": 20, "required": true},
+        {"label": "Opening Acts", "type": "Enumerated", "target": "Band", "sort_order": 30, "multi": true},
+        {"label": "Ticket Price", "type": "Money", "range": true, "currency": "USD", "sort_order": 40},
+        {"label": "Poster", "type": "Photo", "sort_order": 50},
+        {"label": "Notes", "type": "RichText", "sort_order": 60}
+      ]
+    }
+  ],
+
+  "subcats": {
+    "Band": {
+      "field_defs": [
+        {"label": "Logo", "type": "Photo", "sort_order": 10},
+        {"label": "Genre", "type": "String", "sort_order": 20},
+        {"label": "Origin", "type": "String", "sort_order": 30},
+        {"label": "Formed", "type": "Integer", "sort_order": 40}
+      ]
+    }
+  },
+
+  "themes": {
+    "lamour_flyer": {
+      "accent": "#e00000",
+      "bg": "#f5f2e8",
+      "ink": "#111111",
+      "mode": "light",
+      "font_heading": "'Chunk Five', 'Impact', sans-serif",
+      "scope": "inherits_from:venuepartner_model"
+    }
+  },
+
+  "embed": {
+    "enabled": true,
+    "default_view": "calendar",
+    "default_size": {"width": "100%", "height": "720"},
+    "attribution": "required",
+    "hide_header": false,
+    "hide_sign_in": true
+  },
+
+  "settings": {
+    "public": true,
+    "social": {"likes": true, "comments": false}
+  }
+}
+```
+
+On a venue's lobby kiosk, this renders as a date-forward calendar with tonight's show as the hero card. On the venue's website, the same catalog embeds as a calendar widget. On a mobile phone, the same catalog shows the next upcoming show first (imminence scoring). On a Thingstick in another city, distance scoring could surface shows at nearby sister venues.
+
+---
+
 ## Conformance Levels
 
 ### Level 1: Minimal (browser-only)
@@ -1088,12 +1512,16 @@ If an extension proves widely useful, it may be promoted to a first-class spec f
 - Supports field types: String, Integer, RichText, Enumerated, Photo
 - In-memory or LocalStorage persistence
 - No server required
+- MAY ignore: subcats, views declaration, inherits_from, embed config, themes
 
 ### Level 2: Standard (lightweight server)
 - Level 1 plus: search, sort, filter, export, history, trash
 - Persistent storage (SQLite, flat files, or equivalent)
 - Photo upload and storage
 - API endpoints per the catdef API spec
+- SHOULD render About page from expanded `product` object
+- SHOULD render subcat fields in value detail
+- MAY ignore: inherits_from, partner-scoped themes
 
 ### Level 3: Full (graph-native)
 - Level 2 plus: social layer, embed, inquire, comments, health score
@@ -1101,12 +1529,20 @@ If an extension proves widely useful, it may be promoted to a first-class spec f
 - Real-time collaborative filtering
 - Multi-tenant support
 - Template sharing
+- MUST support subcat CRUD (seed values, Photo fields in subcats)
+- SHOULD support views declaration (calendar, map if primary_axis is date/place)
+- MAY support recursive subcats (Enumerated in subcats). Runtimes that do MUST handle cycle detection and depth caps.
+- **Recursive subcats implementation note:** Supporting recursive subcats turns the product into a graph-database editor, which is a different product category than a catalog tool. Most Level 3 runtimes should deliberately NOT support recursive subcats. The spec permits them so that specialized graph-tagging applications (PXMemo-style photo collections, knowledge bases, taxonomies) can use catdef as a transport format.
 
 ### Level 4: Platform
 - Level 3 plus: AI onboarding, custom domains, billing, wildcard subdomains
 - Theme and template marketplace
 - Browser plugin integration
 - Federated catalog discovery
+- Partner inheritance (inherits_from with live update link)
+- Partner-scoped themes and views
+- Context-aware rendering (scorable fields + environment hints)
+- Kiosk pairing and management (Thingstick-class devices)
 
 ---
 
